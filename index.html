@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>商家好评·跳转工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        :root {
+            --bg-color: #f5f7fa;
+            --card-bg: rgba(255, 255, 255, 0.6);
+            --text-primary: #1e2a3a;
+            --text-secondary: #2c3e50;
+            --border-light: rgba(255, 255, 255, 0.3);
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --btn-bg: rgba(255, 255, 255, 0.7);
+            --btn-hover: rgba(255, 255, 255, 0.9);
+            --warning-bg: rgba(255, 230, 200, 0.7);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --card-bg: rgba(40, 40, 40, 0.7);
+                --text-primary: #f0f0f0;
+                --text-secondary: #cccccc;
+                --border-light: rgba(255, 255, 255, 0.1);
+                --shadow-color: rgba(0, 0, 0, 0.5);
+                --btn-bg: rgba(60, 60, 60, 0.7);
+                --btn-hover: rgba(80, 80, 80, 0.9);
+                --warning-bg: rgba(80, 60, 30, 0.7);
+            }
+        }
+
+        body {
+            background-color: var(--bg-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 16px;
+        }
+
+        .glass-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            border-radius: 36px 36px 28px 28px;
+            padding: 24px 20px 20px;
+            box-shadow: 0 20px 40px var(--shadow-color), 0 0 0 1px var(--border-light) inset;
+            border: 1px solid var(--border-light);
+        }
+
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .review-card {
+            background: var(--btn-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            padding: 16px 18px 16px 22px;
+            border: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 16px var(--shadow-color);
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            animation: cardPop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+        }
+
+        .review-card:active {
+            transform: scale(0.98);
+        }
+
+        @keyframes cardPop {
+            0% { opacity: 0; transform: translateY(15px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .review-text {
+            font-size: 1.05rem;
+            line-height: 1.4;
+            color: var(--text-primary);
+            font-weight: 480;
+            word-break: break-word;
+            flex: 1;
+            padding-right: 12px;
+        }
+
+        .copy-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 40px;
+            padding: 10px 18px;
+            font-size: 0.9rem;
+            font-weight: 550;
+            color: var(--text-secondary);
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.92);
+            background: var(--btn-hover);
+        }
+
+        .copy-btn::after {
+            content: "📋";
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .browser-tip {
+            background: var(--warning-bg);
+            backdrop-filter: blur(5px);
+            border-radius: 30px;
+            padding: 10px 16px;
+            margin: 10px 0 16px;
+            font-size: 0.85rem;
+            text-align: center;
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+            box-shadow: 0 4px 10px var(--shadow-color);
+        }
+
+        .contact-footer {
+            margin-top: 16px;
+            text-align: center;
+            padding: 18px 10px 10px;
+            border-top: 1px solid var(--border-light);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            backdrop-filter: blur(4px);
+            border-radius: 0 0 24px 24px;
+        }
+
+        .contact-email {
+            background: var(--btn-bg);
+            display: inline-block;
+            padding: 8px 28px;
+            border-radius: 50px;
+            border: 1px solid var(--border-light);
+            margin-top: 8px;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+            box-shadow: 0 2px 6px var(--shadow-color);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.2s;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(30px) saturate(200%);
+            -webkit-backdrop-filter: blur(30px) saturate(200%);
+            border-radius: 48px;
+            padding: 32px 24px;
+            width: 300px;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 30px 60px var(--shadow-color);
+            transform: scale(0.9);
+            transition: transform 0.2s;
+            text-align: center;
+        }
+
+        .modal-overlay.show .modal-glass {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            font-weight: 580;
+            margin-bottom: 20px;
+        }
+
+        .app-options {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .app-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 60px;
+            padding: 16px 10px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: var(--text-primary);
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 6px 12px var(--shadow-color);
+        }
+
+        .app-btn:active {
+            transform: scale(0.96);
+            background: var(--btn-hover);
+        }
+
+        .app-btn.douyin {
+            border-left: 8px solid #ff5777;
+        }
+        .app-btn.meituan {
+            border-left: 8px solid #ffc107;
+        }
+
+        .cancel-btn {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            border-radius: 40px;
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .cancel-btn:active {
+            background: var(--btn-bg);
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+<div class="glass-container">
+    <!-- 动态好评列表 -->
+    <div id="reviewsContainer" class="reviews-list"></div>
+
+    <!-- 微信/浏览器提示条 -->
+    <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 跳转商家页面</div>
+
+    <!-- 底部联系方式（已按您的要求修改） -->
+    <div class="contact-footer">
+        <span>📬 商务合作 · 好评</span>
+        <div class="contact-email">📞15617743996</div>
+    </div>
+</div>
+
+<!-- 选择APP模态框 -->
+<div class="modal-overlay" id="appChoiceModal">
+    <div class="modal-glass">
+        <div class="modal-title">✨ 查看商家页面</div>
+        <div class="app-options">
+            <div class="app-btn douyin" id="chooseDouyin">🎵 抖音 · 进店</div>
+            <div class="app-btn meituan" id="chooseMeituan">🍜 美团 · 进店</div>
+        </div>
+        <div class="cancel-btn" id="closeModal">取消</div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ================= 全局配置（只需修改这里）=================
+        // 【请替换您的抖音店铺链接】从抖音APP复制的短链接（例如 v.douyin.com/xxx）
+        const DOUYIN_SHOP_URL = 'https://v.douyin.com/2injfL-zPnI/';
+        // 【请替换您的美团店铺链接】从美团APP复制的短链接（例如 dpurl.cn/xxx）
+        const MEITUAN_SHOP_URL = 'http://dpurl.cn/oubE9oaz';
+
+        // 好评话库（纯文案，可自由增删）
+        const REVIEW_TEXTS = [
+            "环境干净整洁，空气流通不闷，电脑配置高游戏流畅不卡顿，键鼠手感好，整体上网体验超棒。",
+            "网速超快，玩大型游戏毫无压力，屏幕清晰画质好，座椅舒服久坐不累，服务也很贴心周到。",
+            "网咖环境高级又安静，卫生做得很到位，设备新反应快，和朋友开黑打游戏特别顺畅，性价比很高。",
+            "电脑配置很高，吃鸡、LOL 运行流畅，没有延迟也不卡顿，耳机音效好，整体体验非常满意。",
+            "环境舒适不嘈杂，灯光柔和不刺眼，机器干净无异味，店员态度好，在这里上网氛围超赞。",
+            "位置好找，店内整洁宽敞，设备维护得很好，游戏更新及时，网速一直很稳定，强烈推荐。",
+            "座椅超级舒服，久坐腰颈都不累，电脑反应迅速，多开程序也不卡，是休闲放松的好去处。",
+            "环境清新无烟味，卫生干净，外设手感一流，玩游戏沉浸感很强，服务热情又周到。",
+            "网咖装修时尚，氛围超棒，电脑配置高端，画面流畅，价格实惠，性价比真的绝了。",
+            "网速稳定不掉线，设备崭新好用，空间宽敞不拥挤，店员服务及时，体验感直接满分。",
+            "环境安静适合开黑，电脑性能强劲，游戏加载超快，耳机清晰，整体上网非常舒适。",
+            "卫生条件一流，桌面干净整洁，电脑不卡顿，外设好用，服务态度好，值得经常来。",
+            "店内环境舒适，空调温度适中，机器配置高，游戏体验极佳，朋友聚会开黑首选这里。",
+            "设备很新，操作流畅，屏幕高清不伤眼，网速飞快，环境安静，上网很放松。",
+            "网咖服务贴心，环境雅致，电脑运行稳定，玩游戏毫无压力，性价比超高。",
+            "空间大不压抑，空气清新，键鼠手感舒适，游戏多更新快，店员热情有礼貌。",
+            "网速给力不延迟，电脑配置高，画质清晰，环境干净安静，上网体验超预期。",
+            "环境简约大气，卫生做得好，设备反应快，玩大型游戏超顺畅，真心强烈推荐。",
+            "座椅舒适包裹性好，久坐不疲劳，电脑性能强，网速快，服务到位很满意。",
+            "店内氛围好，适合娱乐放松，机器干净好用，游戏流畅，价格合理，值得再来。",
+            "环境整洁无烟味，设备维护好，电脑不卡顿，网速稳定，服务态度超棒。",
+            "网咖配置在线，玩 3A 大作毫无压力，屏幕清晰，音效好，体验感直接拉满。",
+            "位置便利，环境舒适安静，电脑速度快，游戏齐全，服务贴心，性价比很高。",
+            "卫生干净整洁，设备崭新，操作流畅，网速超快，环境好，上网很舒服。",
+            "店内灯光柔和，环境安静不吵，电脑性能强，外设好用，服务及时又周到。",
+            "高端配置，流畅运行各种游戏，无卡顿无延迟，环境舒适，是电竞爱好者的福音。",
+            "网咖环境好，空气流通，电脑反应快，座椅舒服，服务热情，体验非常不错。",
+            "设备齐全且崭新，网速稳定，游戏加载快，环境干净安静，上网很享受。",
+            "空间宽敞，环境雅致，电脑配置高，玩游戏超爽，服务好，价格实惠。",
+            "整体体验超棒，环境干净卫生，设备流畅不卡，服务贴心，以后会常来打卡。"
+        ];
+
+        // 根据文案数组生成带ID的好评对象列表
+        const INIT_REVIEWS = REVIEW_TEXTS.map((text, index) => ({
+            id: `r${index + 1}`,
+            text: text
+        }));
+
+        // 当前剩余的好评
+        let currentReviews = INIT_REVIEWS.map(item => ({ ...item }));
+
+        // 被选中待操作的卡片ID
+        let selectedReviewId = null;
+
+        // 检测微信浏览器
+        const ua = navigator.userAgent.toLowerCase();
+        const isWeChat = ua.indexOf('micromessenger') !== -1;
+
+        // DOM 元素
+        const reviewsContainer = document.getElementById('reviewsContainer');
+        const modalOverlay = document.getElementById('appChoiceModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const chooseDouyin = document.getElementById('chooseDouyin');
+        const chooseMeituan = document.getElementById('chooseMeituan');
+        const browserTip = document.getElementById('browserTip');
+
+        // 根据环境设置底部提示文案
+        if (isWeChat) {
+            browserTip.innerText = '⚠️ 微信内无法直接跳转APP，请点击右上角“浏览器打开”';
+        } else {
+            browserTip.innerText = '✨ 点击复制 → 选择APP → 自动跳转商家页面';
+        }
+
+        // 随机挑选5条
+        function pickRandomFive(arr) {
+            if (arr.length <= 5) return arr.slice();
+            const shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled.slice(0, 5);
+        }
+
+        // 渲染好评卡片
+        function renderReviews() {
+            const listToShow = pickRandomFive(currentReviews);
+            if (listToShow.length === 0) {
+                reviewsContainer.innerHTML = `<div class="empty-message">✨ 暂时没有好评了，刷新页面恢复~</div>`;
+                return;
+            }
+            let htmlStr = '';
+            listToShow.forEach(item => {
+                htmlStr += `
+                    <div class="review-card">
+                        <span class="review-text">${item.text}</span>
+                        <button class="copy-btn" data-id="${item.id}">复制</button>
+                    </div>
+                `;
+            });
+            reviewsContainer.innerHTML = htmlStr;
+        }
+
+        // 检查剩余库存弹窗 (固定阈值20,10,5)
+        function checkStockAndAlert() {
+            const len = currentReviews.length;
+            if (len === 20) {
+                alert('📢 库存剩余 20 条');
+            } else if (len === 10) {
+                alert('📢 库存剩余 10 条');
+            } else if (len === 5) {
+                alert('📢 库存只剩 5 条啦！');
+            }
+        }
+
+        // 删除指定ID的好评
+        function deleteReviewById(id) {
+            const beforeLength = currentReviews.length;
+            currentReviews = currentReviews.filter(item => item.id !== id);
+            const afterLength = currentReviews.length;
+
+            if (beforeLength !== afterLength) {
+                renderReviews();
+                checkStockAndAlert();
+                return true;
+            }
+            return false;
+        }
+
+        // 跳转APP (微信内只提示，不跳转)
+        function attemptJump(url, appName) {
+            if (!url) {
+                alert(`商家链接未配置，请检查代码中该条评价的${appName}Url`);
+                return;
+            }
+            if (isWeChat) {
+                alert(`微信内无法直接打开APP。\n请点击右上角“...”选择浏览器打开。\n即将跳转商家页面：${url}`);
+                return;
+            }
+            // 正常浏览器跳转
+            window.location.href = url;
+        }
+
+        // 模态框控制
+        function hideModal() {
+            modalOverlay.classList.remove('show');
+            selectedReviewId = null;
+        }
+
+        function showModal(id) {
+            selectedReviewId = id;
+            modalOverlay.classList.add('show');
+        }
+
+        // 事件绑定
+        reviewsContainer.addEventListener('click', (e) => {
+            const copyBtn = e.target.closest('.copy-btn');
+            if (!copyBtn) return;
+            const id = copyBtn.getAttribute('data-id');
+            if (id) showModal(id);
+        });
+
+        chooseDouyin.addEventListener('click', () => {
+            if (!selectedReviewId) {
+                hideModal();
+                return;
+            }
+            deleteReviewById(selectedReviewId);
+            hideModal();
+            attemptJump(DOUYIN_SHOP_URL, 'douyin');
+        });
+
+        chooseMeituan.addEventListener('click', () => {
+            if (!selectedReviewId) {
+                hideModal();
+                return;
+            }
+            deleteReviewById(selectedReviewId);
+            hideModal();
+            attemptJump(MEITUAN_SHOP_URL, 'meituan');
+        });
+
+        closeModalBtn.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) hideModal();
+        });
+
+        // 初始化
+        function initPage() {
+            currentReviews = INIT_REVIEWS.map(item => ({ ...item }));
+            renderReviews();
+        }
+
+        initPage();
+    })();
+</script>
+</body>
+</html>
