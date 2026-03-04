@@ -302,11 +302,20 @@
 
 <script>
     (function() {
-        // ================= 全局配置（只需修改这里）=================
-        // 【请替换您的抖音店铺链接】从抖音APP复制的短链接（例如 v.douyin.com/xxx）
-        const DOUYIN_SHOP_URL = 'https://v.douyin.com/2injfL-zPnI/';
-        // 【请替换您的美团店铺链接】从美团APP复制的短链接（例如 dpurl.cn/xxx）
-        const MEITUAN_SHOP_URL = 'http://dpurl.cn/oubE9oaz';
+        // ================= 全局配置（已填入鲨鱼电竞馆真实ID）=================
+        // 鲨鱼电竞馆ID配置
+        const SHOP_CONFIG = {
+            douyin: {
+                id: "7511588685994575911", // 抖音团购店铺ID
+                scheme: "douyin://poi/7511588685994575911", // 抖音APP跳转协议
+                webUrl: "https://www.douyin.com/poi/detail?poi_id=7511588685994575911" // 抖音网页版备用
+            },
+            meituan: {
+                id: "1449375824", // 美团商家ID
+                scheme: "meituan://www.meituan.com/poi?id=1449375824", // 美团APP跳转协议
+                webUrl: "https://www.meituan.com/cate/1449375824" // 美团网页版备用
+            }
+        };
 
         // 好评话库（纯文案，可自由增删）
         const REVIEW_TEXTS = [
@@ -429,18 +438,29 @@
             return false;
         }
 
-        // 跳转APP (微信内只提示，不跳转)
-        function attemptJump(url, appName) {
-            if (!url) {
-                alert(`商家链接未配置，请检查代码中该条评价的${appName}Url`);
-                return;
+        // 核心跳转函数：优先唤醒APP，失败则跳转到网页版
+        function jumpToApp(appType) {
+            const config = SHOP_CONFIG[appType];
+            if (!config) return;
+
+            // 非微信浏览器才尝试唤醒APP
+            if (!isWeChat) {
+                // 1. 尝试唤醒APP
+                const link = document.createElement('a');
+                link.href = config.scheme;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // 2. 500ms后未唤醒则跳转到网页版
+                setTimeout(() => {
+                    window.location.href = config.webUrl;
+                }, 500);
+            } else {
+                // 微信内直接提示并跳转到网页版
+                alert(`微信内无法直接打开${appType === 'douyin' ? '抖音' : '美团'}APP，即将跳转到网页版商家页面`);
+                window.location.href = config.webUrl;
             }
-            if (isWeChat) {
-                alert(`微信内无法直接打开APP。\n请点击右上角“...”选择浏览器打开。\n即将跳转商家页面：${url}`);
-                return;
-            }
-            // 正常浏览器跳转
-            window.location.href = url;
         }
 
         // 模态框控制
@@ -467,9 +487,19 @@
                 hideModal();
                 return;
             }
+            // 复制好评文案到剪贴板
+            const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
+            if (selectedReview) {
+                navigator.clipboard.writeText(selectedReview.text).then(() => {
+                    alert('✅ 好评文案已复制，即将为您跳转商家页面');
+                }).catch(() => {
+                    alert('⚠️ 复制失败，即将为您跳转商家页面');
+                });
+            }
+            // 删除该条好评并跳转
             deleteReviewById(selectedReviewId);
             hideModal();
-            attemptJump(DOUYIN_SHOP_URL, 'douyin');
+            jumpToApp('douyin');
         });
 
         chooseMeituan.addEventListener('click', () => {
@@ -477,9 +507,19 @@
                 hideModal();
                 return;
             }
+            // 复制好评文案到剪贴板
+            const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
+            if (selectedReview) {
+                navigator.clipboard.writeText(selectedReview.text).then(() => {
+                    alert('✅ 好评文案已复制，即将为您跳转商家页面');
+                }).catch(() => {
+                    alert('⚠️ 复制失败，即将为您跳转商家页面');
+                });
+            }
+            // 删除该条好评并跳转
             deleteReviewById(selectedReviewId);
             hideModal();
-            attemptJump(MEITUAN_SHOP_URL, 'meituan');
+            jumpToApp('meituan');
         });
 
         closeModalBtn.addEventListener('click', hideModal);
