@@ -165,6 +165,7 @@
             letter-spacing: 0.5px;
             color: var(--text-primary);
             box-shadow: 0 2px 6px var(--shadow-color);
+            text-decoration: none; /* 去除下划线 */
         }
 
         .modal-overlay {
@@ -280,10 +281,10 @@
     <!-- 微信/浏览器提示条 -->
     <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 跳转商家页面</div>
 
-    <!-- 底部联系方式（已按您的要求修改） -->
+    <!-- 底部联系方式（点击电话可拨号） -->
     <div class="contact-footer">
         <span>📬 商务合作 · 好评宝</span>
-        <div class="contact-email">📞15617743996</div>
+        <a href="tel:15617743996" class="contact-email">📞15617743996</a>
     </div>
 </div>
 
@@ -496,5 +497,4 @@
     })();
 </script>
 </body>
-
 </html>
