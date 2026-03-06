@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 · 一键唤起美团/抖音</title>
+    <title>商家好评 · 持久化库存 + 一键唤起APP</title>
     <style>
-        /* ========== 全局样式（与您之前的一致，此处完整保留） ========== */
+        /* ========== 全局变量与重置 ========== */
         * {
             margin: 0;
             padding: 0;
@@ -414,7 +414,6 @@
     </style>
 </head>
 <body>
-    <!-- Toast提示容器 -->
     <div class="toast-message" id="toastMessage"></div>
 
     <!-- 微信引导弹窗 -->
@@ -429,7 +428,6 @@
         </div>
     </div>
 
-    <!-- 主界面 -->
     <div class="glass-container">
         <div id="reviewsContainer" class="reviews-list"></div>
         <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 自动跳转商家页面</div>
@@ -439,7 +437,6 @@
         </div>
     </div>
 
-    <!-- 选择APP模态框 -->
     <div class="modal-overlay" id="appChoiceModal">
         <div class="modal-glass">
             <div class="modal-title">✨ 查看商家页面</div>
@@ -453,32 +450,28 @@
 
     <script>
         (function() {
-            // ================= 商家配置（已根据您的最新链接配置）=================
+            // ================= 商家配置 =================
             const SHOP_CONFIG = {
                 meituan: {
-                    id: "1755904985", // 美团商家ID
+                    id: "1755904985",
                     name: "美团",
-                    // 美团唤起链接（基于ID，可能仍需优化）
                     universalLink: "https://i.meituan.com/poi/1755904985",
                     schemePath: "imeituan://www.meituan.com/poi/1755904985",
                     schemeShop: "imeituan://www.meituan.com/shop/1755904985",
                     schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
-                    // 备用网页（使用您提供的短链接）
-                    fallbackUrl: "http://dpurl.cn/rYQkSEfz"
+                    fallbackUrl: "http://dpurl.cn/rYQkSEfz" // 您的美团短链接
                 },
                 douyin: {
                     name: "抖音",
-                    // ★★★ 使用您提供的完整链接提取的ID，确保直达商家页 ★★★
-                    // iOS Universal Link (官方标准格式)
+                    // 使用您提供的抖音完整链接提取的ID
                     universalLink: "https://www.douyin.com/aweme/poi/7426710119150258228",
-                    // Android/鸿蒙 URL Scheme
                     scheme: "snssdk1128://poi/detail?id=7426710119150258228",
-                    // 备用网页（使用您提供的完整链接）
+                    // 备用网页（同样使用完整链接，确保用户能访问）
                     fallbackUrl: "https://life-share.scsjsd.com/falcon/poi_mwa/poi_detail?poi_id=7426710119150258228"
                 }
             };
 
-            // ================= 好评话库（30条）=================
+            // ================= 好评话库（原始30条）=================
             const REVIEW_TEXTS = [
                 "环境干净整洁，空气流通不闷，电脑配置高游戏流畅不卡顿，键鼠手感好，整体上网体验超棒。",
                 "网速超快，玩大型游戏毫无压力，屏幕清晰画质好，座椅舒服久坐不累，服务也很贴心周到。",
@@ -512,8 +505,39 @@
                 "整体体验超棒，环境干净卫生，设备流畅不卡，服务贴心，以后会常来打卡。"
             ];
 
-            const INIT_REVIEWS = REVIEW_TEXTS.map((text, index) => ({ id: `r${index + 1}`, text }));
-            let currentReviews = INIT_REVIEWS.map(item => ({ ...item }));
+            // 初始化好评库存：从 localStorage 读取，如果没有则用原始30条
+            const STORAGE_KEY = 'good_reviews';
+            let currentReviews = [];
+
+            function loadReviewsFromStorage() {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    try {
+                        currentReviews = JSON.parse(stored);
+                        // 确保每条都有 id 和 text，防止存储损坏
+                        if (!Array.isArray(currentReviews) || currentReviews.length === 0 || !currentReviews[0].id) {
+                            throw new Error('Invalid storage');
+                        }
+                    } catch (e) {
+                        // 如果存储损坏，重新初始化为30条
+                        currentReviews = REVIEW_TEXTS.map((text, index) => ({ id: `r${index + 1}`, text }));
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentReviews));
+                    }
+                } else {
+                    // 首次访问，初始化为30条
+                    currentReviews = REVIEW_TEXTS.map((text, index) => ({ id: `r${index + 1}`, text }));
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentReviews));
+                }
+            }
+
+            // 保存当前库存到 localStorage
+            function saveReviewsToStorage() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(currentReviews));
+            }
+
+            // 调用加载
+            loadReviewsFromStorage();
+
             let selectedReviewId = null;
 
             // 环境检测
@@ -572,7 +596,7 @@
                 browserTip.style.display = 'block';
             }
 
-            // 好评列表渲染
+            // 随机挑选5条
             function pickRandomFive(arr) {
                 if (arr.length <= 5) return arr.slice();
                 const shuffled = [...arr];
@@ -583,6 +607,7 @@
                 return shuffled.slice(0, 5);
             }
 
+            // 渲染好评卡片
             function renderReviews() {
                 const listToShow = pickRandomFive(currentReviews);
                 if (listToShow.length === 0) {
@@ -601,6 +626,7 @@
                 reviewsContainer.innerHTML = htmlStr;
             }
 
+            // 检查库存并弹窗提醒
             function checkStockAndAlert() {
                 const len = currentReviews.length;
                 if (len === 20) showToast('📢 库存剩余 20 条');
@@ -608,10 +634,12 @@
                 else if (len === 5) showToast('📢 库存只剩 5 条啦！');
             }
 
+            // 删除指定ID的好评，并保存到存储
             function deleteReviewById(id) {
                 const beforeLength = currentReviews.length;
                 currentReviews = currentReviews.filter(item => item.id !== id);
                 if (beforeLength !== currentReviews.length) {
+                    saveReviewsToStorage(); // 立即保存到 localStorage
                     renderReviews();
                     checkStockAndAlert();
                     return true;
@@ -619,7 +647,7 @@
                 return false;
             }
 
-            // ========== 美团唤起（保留原有逻辑） ==========
+            // ========== 美团多级唤醒 ==========
             function jumpToMeituan() {
                 const config = SHOP_CONFIG.meituan;
                 const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
@@ -691,7 +719,7 @@
                 }, 3000);
             }
 
-            // ========== 抖音唤起（使用新配置） ==========
+            // ========== 抖音唤起 ==========
             function jumpToDouyin() {
                 const config = SHOP_CONFIG.douyin;
                 const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
@@ -775,6 +803,7 @@
 
                 chooseDouyin.addEventListener('click', () => {
                     if (!selectedReviewId) { hideModal(); return; }
+                    // 先删除并保存，再执行跳转
                     deleteReviewById(selectedReviewId);
                     hideModal();
                     jumpToDouyin();
@@ -793,12 +822,8 @@
                 });
             }
 
-            // 初始化
-            function initPage() {
-                currentReviews = INIT_REVIEWS.map(item => ({ ...item }));
-                renderReviews();
-            }
-            initPage();
+            // 初始化渲染
+            renderReviews();
         })();
     </script>
 </body>
