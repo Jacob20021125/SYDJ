@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 · 唤醒美团直达商家页</title>
+    <title>商家好评 · 终极唤醒版</title>
     <style>
         /* ========== 全局变量与重置 ========== */
         * {
@@ -320,7 +320,7 @@
             align-items: center;
             justify-content: center;
             z-index: 3000;
-            transition: opacity 0.15s ease-out; /* 快速收回 */
+            transition: opacity 0.15s ease-out;
             opacity: 0;
             pointer-events: none;
         }
@@ -464,19 +464,23 @@
 
     <script>
         (function() {
-            // ================= 商家配置（美团/抖音直达）=================
+            // ================= 商家配置（终极优化版：优先使用路径式跳转）=================
             const SHOP_CONFIG = {
                 meituan: {
-                    id: "1755904985", // 从您提供的链接提取
+                    id: "1755904985",
                     name: "美团",
-                    universalLink: "https://i.meituan.com/poi/1755904985",         // iOS Universal Link
-                    schemePath: "imeituan://www.meituan.com/poi/1755904985",       // 路径式（最推荐）
-                    schemeShop: "imeituan://www.meituan.com/shop/1755904985",      // 店铺式
-                    schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",   // 参数式（兜底）
-                    fallbackUrl: "https://www.meituan.com/shop/1755904985"         // 网页版备用
+                    // 1. Universal Link (iOS无缝跳转)
+                    universalLink: "https://i.meituan.com/poi/1755904985",
+                    // 2. 路径式 Scheme (Android/鸿蒙最佳)
+                    schemePath: "imeituan://www.meituan.com/poi/1755904985",
+                    // 3. 店铺式 Scheme (备选)
+                    schemeShop: "imeituan://www.meituan.com/shop/1755904985",
+                    // 4. 参数式 Scheme (兜底)
+                    schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
+                    fallbackUrl: "https://www.meituan.com/shop/1755904985"
                 },
                 douyin: {
-                    id: "7613748240831546163", // 您提供的抖音ID
+                    id: "7613748240831546163",
                     name: "抖音",
                     universalLink: "https://www.douyin.com/aweme/poi/7613748240831546163",
                     scheme: "snssdk1128://poi/detail?id=7613748240831546163",
@@ -630,7 +634,7 @@
                 return false;
             }
 
-            // ================= 美团多级唤醒 =================
+            // ================= 美团多级唤醒（优化版：路径式优先）=================
             function jumpToMeituan() {
                 const config = SHOP_CONFIG.meituan;
                 const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
@@ -660,6 +664,7 @@
                 document.addEventListener('visibilitychange', visibilityHandler);
                 window.addEventListener('blur', blurHandler);
 
+                // 优先级: Universal Link > 路径式Scheme > 店铺式Scheme > 参数式Scheme
                 const schemes = [
                     { type: 'universal', url: config.universalLink },
                     { type: 'scheme', url: config.schemePath },
