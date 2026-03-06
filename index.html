@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title> 好评宝 （美团/抖音ID已更新）</title>
+    <title>好评宝</title>
     <style>
         * {
             margin: 0;
@@ -302,18 +302,19 @@
 
 <script>
     (function() {
-        // ================= 商家配置（已根据您提供的最新ID更新）=================
+        // ================= 商家配置（使用您提供的最新ID，并优化美团唤起）=================
         const SHOP_CONFIG = {
             douyin: {
                 id: "7613748240831546163", // 您提供的抖音ID
-                scheme: "douyin://poi/7613748240831546163",
-                webUrl: "https://www.douyin.com/poi/detail?poi_id=7613748240831546163"
+                scheme: "douyin://poi/7613748240831546163", // 抖音APP跳转协议
+                webUrl: "https://www.douyin.com/poi/detail?poi_id=7613748240831546163" // 抖音网页版备用
             },
             meituan: {
                 id: "1755904985", // 您提供的大众点评/美团ID
-                scheme: "meituan://www.meituan.com/poi?id=1755904985",
-                // 使用大众点评移动端链接作为webUrl，确保在浏览器中也能正确打开商家页
-                webUrl: "https://m.dianping.com/shop/1755904985"
+                // 使用更简洁的scheme，确保能唤起美团APP (meituan://poi/商家ID)
+                scheme: "meituan://poi/1755904985",
+                // 备用网页：直接使用美团官方店铺页，而非大众点评
+                webUrl: "https://www.meituan.com/shop/1755904985"
             }
         };
 
@@ -594,5 +595,3 @@
 </script>
 </body>
 </html>
-
-
