@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>好评宝</title>
+    <title>商家好评 · 双轨唤醒（微信提示+多系统兼容）</title>
     <style>
         * {
             margin: 0;
@@ -22,6 +22,8 @@
             --btn-bg: rgba(255, 255, 255, 0.7);
             --btn-hover: rgba(255, 255, 255, 0.9);
             --warning-bg: rgba(255, 230, 200, 0.7);
+            --wechat-bg: rgba(26, 173, 25, 0.1);
+            --wechat-border: rgba(26, 173, 25, 0.3);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -35,6 +37,8 @@
                 --btn-bg: rgba(60, 60, 60, 0.7);
                 --btn-hover: rgba(80, 80, 80, 0.9);
                 --warning-bg: rgba(80, 60, 30, 0.7);
+                --wechat-bg: rgba(26, 173, 25, 0.2);
+                --wechat-border: rgba(26, 173, 25, 0.4);
             }
         }
 
@@ -141,6 +145,26 @@
             color: var(--text-primary);
             border: 1px solid var(--border-light);
             box-shadow: 0 4px 10px var(--shadow-color);
+        }
+
+        .wechat-modal {
+            background: var(--wechat-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 16px 20px;
+            margin: 10px 0 16px;
+            border: 2px solid var(--wechat-border);
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        .wechat-modal::before {
+            content: "⚠️";
+            margin-right: 8px;
+            font-size: 1.2rem;
         }
 
         .contact-footer {
@@ -274,14 +298,20 @@
     </style>
 </head>
 <body>
-<div class="glass-container">
+<div class="glass-container" id="mainContainer">
     <!-- 动态好评列表 -->
     <div id="reviewsContainer" class="reviews-list"></div>
 
-    <!-- 微信/浏览器提示条 -->
-    <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 跳转商家页面</div>
+    <!-- 微信专用提示条（初始隐藏） -->
+    <div id="wechatModal" class="wechat-modal" style="display: none;">
+        检测到微信环境，请点击右上角「浏览器打开」<br>
+        <span style="font-size: 0.85rem; opacity: 0.8;">打开后即可自动唤起APP</span>
+    </div>
 
-    <!-- 底部联系方式（点击电话可拨号） -->
+    <!-- 普通浏览器提示条 -->
+    <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 自动跳转商家页面</div>
+
+    <!-- 底部联系方式 -->
     <div class="contact-footer">
         <span>📬 商务合作 · 好评宝</span>
         <a href="tel:15617743996" class="contact-email">📞15617743996</a>
@@ -302,23 +332,28 @@
 
 <script>
     (function() {
-        // ================= 商家配置（使用您提供的最新ID，并优化美团唤起）=================
+        // ================= 商家配置（双轨唤醒）=================
         const SHOP_CONFIG = {
-            douyin: {
-                id: "7613748240831546163", // 您提供的抖音ID
-                scheme: "douyin://poi/7613748240831546163", // 抖音APP跳转协议
-                webUrl: "https://www.douyin.com/poi/detail?poi_id=7613748240831546163" // 抖音网页版备用
-            },
             meituan: {
-                id: "1755904985", // 您提供的大众点评/美团ID
-                // 使用更简洁的scheme，确保能唤起美团APP (meituan://poi/商家ID)
-                scheme: "meituan://poi/1755904985",
-                // 备用网页：直接使用美团官方店铺页，而非大众点评
-                webUrl: "https://www.meituan.com/shop/1755904985"
+                id: "1755904985",
+                // 方案1: iOS Universal Link (不会被微信拦截，但需要域名配置)
+                universalLink: "https://i.meituan.com/poi/1755904985",
+                // 方案2: URL Scheme (Android/鸿蒙/老系统兜底) [citation:3]
+                scheme: "imeituan://www.meituan.com/poi?id=1755904985",
+                // 备用网页：仅在完全无法唤起时跳转（用户未安装APP）
+                fallbackUrl: "https://www.meituan.com/shop/1755904985"
+            },
+            douyin: {
+                id: "7613748240831546163",
+                // 抖音的Universal Link (官方推荐)
+                universalLink: "https://www.douyin.com/aweme/poi/7613748240831546163",
+                // 抖音URL Scheme [citation:8]
+                scheme: "snssdk1128://poi/detail?id=7613748240831546163",
+                fallbackUrl: "https://www.douyin.com/poi/detail?poi_id=7613748240831546163"
             }
         };
 
-        // 好评话库（纯文案，可自由增删）
+        // 好评话库
         const REVIEW_TEXTS = [
             "环境干净整洁，空气流通不闷，电脑配置高游戏流畅不卡顿，键鼠手感好，整体上网体验超棒。",
             "网速超快，玩大型游戏毫无压力，屏幕清晰画质好，座椅舒服久坐不累，服务也很贴心周到。",
@@ -352,21 +387,20 @@
             "整体体验超棒，环境干净卫生，设备流畅不卡，服务贴心，以后会常来打卡。"
         ];
 
-        // 根据文案数组生成带ID的好评对象列表
+        // 初始化好评列表
         const INIT_REVIEWS = REVIEW_TEXTS.map((text, index) => ({
             id: `r${index + 1}`,
             text: text
         }));
-
-        // 当前剩余的好评
         let currentReviews = INIT_REVIEWS.map(item => ({ ...item }));
-
-        // 被选中待操作的卡片ID
         let selectedReviewId = null;
 
         // 检测微信浏览器
         const ua = navigator.userAgent.toLowerCase();
         const isWeChat = ua.indexOf('micromessenger') !== -1;
+        const isIOS = /iphone|ipad|ipod/.test(ua);
+        const isAndroid = /android/.test(ua);
+        const isHarmony = ua.indexOf('harmony') !== -1; // 鸿蒙检测
 
         // DOM 元素
         const reviewsContainer = document.getElementById('reviewsContainer');
@@ -375,12 +409,27 @@
         const chooseDouyin = document.getElementById('chooseDouyin');
         const chooseMeituan = document.getElementById('chooseMeituan');
         const browserTip = document.getElementById('browserTip');
+        const wechatModal = document.getElementById('wechatModal');
+        const mainContainer = document.getElementById('mainContainer');
 
-        // 根据环境设置底部提示文案
+        // 微信环境特殊处理
         if (isWeChat) {
-            browserTip.innerText = '⚠️ 微信内无法直接跳转APP，请点击右上角“浏览器打开”';
+            // 显示微信专用提示，隐藏普通提示
+            wechatModal.style.display = 'block';
+            browserTip.style.display = 'none';
+            
+            // 微信内点击任何唤起按钮都弹窗提示用浏览器打开
+            // 通过事件代理处理
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.app-btn') || e.target.closest('.copy-btn')) {
+                    e.preventDefault();
+                    alert('⚠️ 微信内无法直接唤起APP\n\n请点击右上角「...」选择「浏览器打开」\n在浏览器中即可自动唤起美团/抖音');
+                }
+            }, true); // 使用捕获阶段确保优先处理
         } else {
-            browserTip.innerText = '✨ 点击复制 → 选择APP → 自动跳转商家页面';
+            // 非微信环境，正常显示
+            wechatModal.style.display = 'none';
+            browserTip.style.display = 'block';
         }
 
         // 随机挑选5条
@@ -413,25 +462,19 @@
             reviewsContainer.innerHTML = htmlStr;
         }
 
-        // 检查剩余库存弹窗 (固定阈值20,10,5)
+        // 检查剩余库存
         function checkStockAndAlert() {
             const len = currentReviews.length;
-            if (len === 20) {
-                alert('📢 库存剩余 20 条');
-            } else if (len === 10) {
-                alert('📢 库存剩余 10 条');
-            } else if (len === 5) {
-                alert('📢 库存只剩 5 条啦！');
-            }
+            if (len === 20) alert('📢 库存剩余 20 条');
+            else if (len === 10) alert('📢 库存剩余 10 条');
+            else if (len === 5) alert('📢 库存只剩 5 条啦！');
         }
 
         // 删除指定ID的好评
         function deleteReviewById(id) {
             const beforeLength = currentReviews.length;
             currentReviews = currentReviews.filter(item => item.id !== id);
-            const afterLength = currentReviews.length;
-
-            if (beforeLength !== afterLength) {
+            if (beforeLength !== currentReviews.length) {
                 renderReviews();
                 checkStockAndAlert();
                 return true;
@@ -439,87 +482,105 @@
             return false;
         }
 
-        /* ========== 核心跳转函数：优先唤醒APP，失败则跳转到网页版 ========== */
+        // ========== 核心唤起函数：双轨唤醒策略 ==========
         function jumpToApp(appType) {
             const config = SHOP_CONFIG[appType];
             if (!config) return;
 
-            // 微信内：只能跳转网页并提示
-            if (isWeChat) {
-                alert(`微信内无法直接打开${appType === 'douyin' ? '抖音' : '美团'}APP，即将跳转到网页版商家页面`);
-                window.location.href = config.webUrl;
-                return;
+            // 微信内已经阻止，这里只处理非微信环境
+            if (isWeChat) return;
+
+            // 复制好评文案
+            const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
+            if (selectedReview) {
+                navigator.clipboard.writeText(selectedReview.text).catch(() => {});
             }
 
-            // ---------- 非微信环境：优雅尝试唤起APP，失败再跳转web ----------
-            // 清除之前残留的定时器和监听 (防止多次点击混乱)
-            if (window._appJumpTimer) {
-                clearTimeout(window._appJumpTimer);
-                window._appJumpTimer = null;
-            }
-            if (window._appJumpHandlers) {
-                if (window._appJumpHandlers.vChange) {
-                    document.removeEventListener('visibilitychange', window._appJumpHandlers.vChange);
-                }
-                if (window._appJumpHandlers.blur) {
-                    window.removeEventListener('blur', window._appJumpHandlers.blur);
-                }
-                window._appJumpHandlers = null;
-            }
+            // 标记是否成功唤起（通过页面可见性推测）
+            let appLaunched = false;
 
-            // 定义事件处理器
-            const vChangeHandler = function() {
-                if (document.visibilityState === 'hidden') {
-                    // 页面隐藏 -> 很大概率APP已唤起，取消跳转web
+            // 监听页面隐藏（APP唤起成功时页面会进入后台）[citation:5]
+            const visibilityHandler = function() {
+                if (document.hidden) {
+                    appLaunched = true;
+                    // 清理监听和定时器
+                    document.removeEventListener('visibilitychange', visibilityHandler);
+                    window.removeEventListener('blur', blurHandler);
                     if (window._appJumpTimer) {
                         clearTimeout(window._appJumpTimer);
                         window._appJumpTimer = null;
-                    }
-                    // 移除监听
-                    if (window._appJumpHandlers) {
-                        document.removeEventListener('visibilitychange', window._appJumpHandlers.vChange);
-                        window.removeEventListener('blur', window._appJumpHandlers.blur);
-                        window._appJumpHandlers = null;
                     }
                 }
             };
 
             const blurHandler = function() {
-                // 页面失去焦点也可能是APP唤起（部分浏览器触发blur）
+                appLaunched = true;
+                document.removeEventListener('visibilitychange', visibilityHandler);
+                window.removeEventListener('blur', blurHandler);
                 if (window._appJumpTimer) {
                     clearTimeout(window._appJumpTimer);
                     window._appJumpTimer = null;
                 }
-                if (window._appJumpHandlers) {
-                    document.removeEventListener('visibilitychange', window._appJumpHandlers.vChange);
-                    window.removeEventListener('blur', window._appJumpHandlers.blur);
-                    window._appJumpHandlers = null;
-                }
             };
 
-            // 保存处理器，供后续移除
-            window._appJumpHandlers = {
-                vChange: vChangeHandler,
-                blur: blurHandler
-            };
-
-            // 添加监听
-            document.addEventListener('visibilitychange', vChangeHandler);
+            document.addEventListener('visibilitychange', visibilityHandler);
             window.addEventListener('blur', blurHandler);
 
-            // 设置兜底定时器：若2000ms后页面仍可见（即APP未唤起），则跳转web
-            window._appJumpTimer = setTimeout(() => {
-                // 超时后页面依然可见 → 跳转web
-                if (window._appJumpHandlers) {
-                    document.removeEventListener('visibilitychange', window._appJumpHandlers.vChange);
-                    window.removeEventListener('blur', window._appJumpHandlers.blur);
-                    window._appJumpHandlers = null;
-                }
-                window.location.href = config.webUrl;
-            }, 2000); // 2秒足够系统响应唤起操作
+            // 双轨唤醒：先尝试 Universal Link，再尝试 Scheme
+            // Universal Link 在 iOS 上效果最好，不会被拦截 [citation:2]
+            // Scheme 在 Android/鸿蒙上作为兜底 [citation:7]
+            
+            // 创建隐藏的 iframe 或 a 标签来触发
+            const triggerUniversalLink = () => {
+                const link = document.createElement('a');
+                link.href = config.universalLink;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                }, 100);
+            };
 
-            // 最后发起APP唤醒 (通过location.href触发scheme)
-            window.location.href = config.scheme;
+            const triggerScheme = () => {
+                // Android 和鸿蒙使用 iframe 更稳定 [citation:5]
+                if (isAndroid || isHarmony) {
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = config.scheme;
+                    document.body.appendChild(iframe);
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 100);
+                } else {
+                    // iOS 使用 location.href
+                    window.location.href = config.scheme;
+                }
+            };
+
+            // 先触发 Universal Link（iOS 最佳实践）
+            triggerUniversalLink();
+
+            // 延迟 300ms 后触发 Scheme（作为兜底，兼容 Android/鸿蒙）[citation:1]
+            setTimeout(() => {
+                if (!appLaunched) {
+                    triggerScheme();
+                }
+            }, 300);
+
+            // 兜底：2秒后如果还没有唤起成功，且用户未安装APP，则跳转网页（仅作为最后选择）
+            window._appJumpTimer = setTimeout(() => {
+                if (!appLaunched) {
+                    // 清理监听
+                    document.removeEventListener('visibilitychange', visibilityHandler);
+                    window.removeEventListener('blur', blurHandler);
+                    
+                    // 询问用户是否跳转网页（避免自动跳转）
+                    if (confirm('未检测到APP唤起，可能是您未安装美团/抖音。是否前往网页版查看？')) {
+                        window.location.href = config.fallbackUrl;
+                    }
+                }
+            }, 2000);
         }
 
         // 模态框控制
@@ -533,56 +594,46 @@
             modalOverlay.classList.add('show');
         }
 
-        // 事件绑定
-        reviewsContainer.addEventListener('click', (e) => {
-            const copyBtn = e.target.closest('.copy-btn');
-            if (!copyBtn) return;
-            const id = copyBtn.getAttribute('data-id');
-            if (id) showModal(id);
-        });
+        // 事件绑定（非微信环境才绑定唤起事件）
+        if (!isWeChat) {
+            reviewsContainer.addEventListener('click', (e) => {
+                const copyBtn = e.target.closest('.copy-btn');
+                if (!copyBtn) return;
+                const id = copyBtn.getAttribute('data-id');
+                if (id) showModal(id);
+            });
 
-        chooseDouyin.addEventListener('click', () => {
-            if (!selectedReviewId) {
+            chooseDouyin.addEventListener('click', () => {
+                if (!selectedReviewId) {
+                    hideModal();
+                    return;
+                }
+                deleteReviewById(selectedReviewId);
                 hideModal();
-                return;
-            }
-            // 复制好评文案到剪贴板
-            const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
-            if (selectedReview) {
-                navigator.clipboard.writeText(selectedReview.text).then(() => {
-                    alert('✅ 好评文案已复制，即将为您跳转商家页面');
-                }).catch(() => {
-                    alert('⚠️ 复制失败，即将为您跳转商家页面');
-                });
-            }
-            // 删除该条好评并跳转
-            deleteReviewById(selectedReviewId);
-            hideModal();
-            jumpToApp('douyin');
-        });
+                jumpToApp('douyin');
+            });
 
-        chooseMeituan.addEventListener('click', () => {
-            if (!selectedReviewId) {
+            chooseMeituan.addEventListener('click', () => {
+                if (!selectedReviewId) {
+                    hideModal();
+                    return;
+                }
+                deleteReviewById(selectedReviewId);
                 hideModal();
-                return;
-            }
-            const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
-            if (selectedReview) {
-                navigator.clipboard.writeText(selectedReview.text).then(() => {
-                    alert('✅ 好评文案已复制，即将为您跳转商家页面');
-                }).catch(() => {
-                    alert('⚠️ 复制失败，即将为您跳转商家页面');
-                });
-            }
-            deleteReviewById(selectedReviewId);
-            hideModal();
-            jumpToApp('meituan');
-        });
+                jumpToApp('meituan');
+            });
 
-        closeModalBtn.addEventListener('click', hideModal);
-        modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) hideModal();
-        });
+            closeModalBtn.addEventListener('click', hideModal);
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) hideModal();
+            });
+        } else {
+            // 微信环境：按钮点击已经被全局阻止，但需要保持模态框关闭功能
+            closeModalBtn.addEventListener('click', hideModal);
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) hideModal();
+            });
+        }
 
         // 初始化
         function initPage() {
