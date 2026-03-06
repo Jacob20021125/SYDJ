@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>好评宝</title>
+    <title> 好评宝 （美团/抖音ID已更新）</title>
     <style>
         * {
             margin: 0;
@@ -165,7 +165,7 @@
             letter-spacing: 0.5px;
             color: var(--text-primary);
             box-shadow: 0 2px 6px var(--shadow-color);
-            text-decoration: none; /* 去除下划线 */
+            text-decoration: none;
         }
 
         .modal-overlay {
@@ -302,18 +302,18 @@
 
 <script>
     (function() {
-        // ================= 全局配置（已填入鲨鱼电竞馆真实ID）=================
-        // 鲨鱼电竞馆ID配置
+        // ================= 商家配置（已根据您提供的最新ID更新）=================
         const SHOP_CONFIG = {
             douyin: {
-                id: "7511588685994575911", // 抖音团购店铺ID
-                scheme: "douyin://poi/7511588685994575911", // 抖音APP跳转协议
-                webUrl: "https://www.douyin.com/poi/detail?poi_id=7511588685994575911" // 抖音网页版备用
+                id: "7613748240831546163", // 您提供的抖音ID
+                scheme: "douyin://poi/7613748240831546163",
+                webUrl: "https://www.douyin.com/poi/detail?poi_id=7613748240831546163"
             },
             meituan: {
-                id: "1449375824", // 美团商家ID
-                scheme: "meituan://www.meituan.com/poi?id=1449375824", // 美团APP跳转协议
-                webUrl: "https://www.meituan.com/cate/1449375824" // 美团网页版备用
+                id: "1755904985", // 您提供的大众点评/美团ID
+                scheme: "meituan://www.meituan.com/poi?id=1755904985",
+                // 使用大众点评移动端链接作为webUrl，确保在浏览器中也能正确打开商家页
+                webUrl: "https://m.dianping.com/shop/1755904985"
             }
         };
 
@@ -438,29 +438,87 @@
             return false;
         }
 
-        // 核心跳转函数：优先唤醒APP，失败则跳转到网页版
+        /* ========== 核心跳转函数：优先唤醒APP，失败则跳转到网页版 ========== */
         function jumpToApp(appType) {
             const config = SHOP_CONFIG[appType];
             if (!config) return;
 
-            // 非微信浏览器才尝试唤醒APP
-            if (!isWeChat) {
-                // 1. 尝试唤醒APP
-                const link = document.createElement('a');
-                link.href = config.scheme;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                // 2. 500ms后未唤醒则跳转到网页版
-                setTimeout(() => {
-                    window.location.href = config.webUrl;
-                }, 500);
-            } else {
-                // 微信内直接提示并跳转到网页版
+            // 微信内：只能跳转网页并提示
+            if (isWeChat) {
                 alert(`微信内无法直接打开${appType === 'douyin' ? '抖音' : '美团'}APP，即将跳转到网页版商家页面`);
                 window.location.href = config.webUrl;
+                return;
             }
+
+            // ---------- 非微信环境：优雅尝试唤起APP，失败再跳转web ----------
+            // 清除之前残留的定时器和监听 (防止多次点击混乱)
+            if (window._appJumpTimer) {
+                clearTimeout(window._appJumpTimer);
+                window._appJumpTimer = null;
+            }
+            if (window._appJumpHandlers) {
+                if (window._appJumpHandlers.vChange) {
+                    document.removeEventListener('visibilitychange', window._appJumpHandlers.vChange);
+                }
+                if (window._appJumpHandlers.blur) {
+                    window.removeEventListener('blur', window._appJumpHandlers.blur);
+                }
+                window._appJumpHandlers = null;
+            }
+
+            // 定义事件处理器
+            const vChangeHandler = function() {
+                if (document.visibilityState === 'hidden') {
+                    // 页面隐藏 -> 很大概率APP已唤起，取消跳转web
+                    if (window._appJumpTimer) {
+                        clearTimeout(window._appJumpTimer);
+                        window._appJumpTimer = null;
+                    }
+                    // 移除监听
+                    if (window._appJumpHandlers) {
+                        document.removeEventListener('visibilitychange', window._appJumpHandlers.vChange);
+                        window.removeEventListener('blur', window._appJumpHandlers.blur);
+                        window._appJumpHandlers = null;
+                    }
+                }
+            };
+
+            const blurHandler = function() {
+                // 页面失去焦点也可能是APP唤起（部分浏览器触发blur）
+                if (window._appJumpTimer) {
+                    clearTimeout(window._appJumpTimer);
+                    window._appJumpTimer = null;
+                }
+                if (window._appJumpHandlers) {
+                    document.removeEventListener('visibilitychange', window._appJumpHandlers.vChange);
+                    window.removeEventListener('blur', window._appJumpHandlers.blur);
+                    window._appJumpHandlers = null;
+                }
+            };
+
+            // 保存处理器，供后续移除
+            window._appJumpHandlers = {
+                vChange: vChangeHandler,
+                blur: blurHandler
+            };
+
+            // 添加监听
+            document.addEventListener('visibilitychange', vChangeHandler);
+            window.addEventListener('blur', blurHandler);
+
+            // 设置兜底定时器：若2000ms后页面仍可见（即APP未唤起），则跳转web
+            window._appJumpTimer = setTimeout(() => {
+                // 超时后页面依然可见 → 跳转web
+                if (window._appJumpHandlers) {
+                    document.removeEventListener('visibilitychange', window._appJumpHandlers.vChange);
+                    window.removeEventListener('blur', window._appJumpHandlers.blur);
+                    window._appJumpHandlers = null;
+                }
+                window.location.href = config.webUrl;
+            }, 2000); // 2秒足够系统响应唤起操作
+
+            // 最后发起APP唤醒 (通过location.href触发scheme)
+            window.location.href = config.scheme;
         }
 
         // 模态框控制
@@ -507,7 +565,6 @@
                 hideModal();
                 return;
             }
-            // 复制好评文案到剪贴板
             const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
             if (selectedReview) {
                 navigator.clipboard.writeText(selectedReview.text).then(() => {
@@ -516,7 +573,6 @@
                     alert('⚠️ 复制失败，即将为您跳转商家页面');
                 });
             }
-            // 删除该条好评并跳转
             deleteReviewById(selectedReviewId);
             hideModal();
             jumpToApp('meituan');
@@ -538,4 +594,5 @@
 </script>
 </body>
 </html>
+
 
