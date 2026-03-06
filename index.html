@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 · 好评宝）</title>
+    <title>商家好评 · 黑白引导弹窗（快速收回）</title>
     <style>
         * {
             margin: 0;
@@ -22,7 +22,10 @@
             --btn-bg: rgba(255, 255, 255, 0.7);
             --btn-hover: rgba(255, 255, 255, 0.9);
             --warning-bg: rgba(255, 230, 200, 0.7);
-            --wechat-green: #07c160;
+            --guide-bg: rgba(255, 255, 255, 0.7);
+            --guide-border: rgba(0, 0, 0, 0.2);
+            --guide-btn-bg: #2c3e50;
+            --guide-btn-text: #ffffff;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -36,7 +39,10 @@
                 --btn-bg: rgba(60, 60, 60, 0.7);
                 --btn-hover: rgba(80, 80, 80, 0.9);
                 --warning-bg: rgba(80, 60, 30, 0.7);
-                --wechat-green: #06ad54;
+                --guide-bg: rgba(40, 40, 40, 0.8);
+                --guide-border: rgba(255, 255, 255, 0.2);
+                --guide-btn-bg: #cccccc;
+                --guide-btn-text: #121212;
             }
         }
 
@@ -170,7 +176,7 @@
             text-decoration: none;
         }
 
-        /* 通用模态框（用于选择APP） */
+        /* 选择APP模态框 */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -294,20 +300,20 @@
             max-width: 80%;
         }
 
-        /* ========== 精美微信引导弹窗 ========== */
+        /* ========== 微信引导弹窗（黑白玻璃，无X，快速收回） ========== */
         .wechat-guide-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 3000;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.15s ease-out; /* 快速收回 */
             opacity: 0;
             pointer-events: none;
         }
@@ -318,19 +324,18 @@
         }
 
         .wechat-guide-card {
-            background: var(--card-bg);
+            background: var(--guide-bg);
             backdrop-filter: blur(40px) saturate(200%);
             -webkit-backdrop-filter: blur(40px) saturate(200%);
             border-radius: 48px;
             padding: 36px 28px;
             max-width: 380px;
             width: 85%;
-            border: 2px solid var(--wechat-green);
-            box-shadow: 0 30px 60px var(--shadow-color), 0 0 0 2px rgba(7, 193, 96, 0.3);
+            border: 1px solid var(--guide-border);
+            box-shadow: 0 30px 60px var(--shadow-color);
             text-align: center;
             color: var(--text-primary);
-            position: relative;
-            animation: guidePop 0.4s cubic-bezier(0.21, 1.11, 0.35, 1.1);
+            animation: guidePop 0.3s cubic-bezier(0.21, 1.11, 0.35, 1.1);
         }
 
         @keyframes guidePop {
@@ -338,104 +343,81 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        .close-guide {
-            position: absolute;
-            top: 18px;
-            right: 18px;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--btn-bg);
-            border: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            line-height: 1;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: all 0.1s;
-            box-shadow: 0 4px 8px var(--shadow-color);
-        }
-
-        .close-guide:active {
-            transform: scale(0.9);
-            background: var(--btn-hover);
-        }
-
         .guide-icon {
             font-size: 80px;
             line-height: 1;
             margin-bottom: 10px;
-            filter: drop-shadow(0 10px 8px rgba(0,0,0,0.2));
+            filter: drop-shadow(0 10px 8px var(--shadow-color));
             animation: arrowBounce 1.2s infinite alternate ease-in-out;
         }
 
         @keyframes arrowBounce {
             from { transform: translateY(0) rotate(25deg); }
-            to { transform: translateY(-20px) rotate(25deg); }
+            to { transform: translateY(-15px) rotate(25deg); }
         }
 
         .guide-dots {
             font-size: 60px;
             letter-spacing: 12px;
-            color: var(--wechat-green);
+            color: var(--text-secondary);
             margin: 0 0 15px;
             text-shadow: 0 4px 8px var(--shadow-color);
         }
 
         .guide-title {
-            font-size: 1.9rem;
-            font-weight: 700;
-            color: var(--wechat-green);
-            margin-bottom: 16px;
+            font-size: 2.2rem;        /* 更大更明显 */
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
             text-shadow: 0 2px 4px var(--shadow-color);
         }
 
         .guide-text {
-            font-size: 1.3rem;
-            font-weight: 600;
-            background: rgba(7, 193, 96, 0.15);
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: var(--btn-bg);
             padding: 14px 0;
             border-radius: 60px;
             margin: 20px 0 12px;
-            border: 1px solid rgba(7, 193, 96, 0.3);
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
         }
 
         .guide-sub {
             font-size: 1.1rem;
             margin-bottom: 28px;
             opacity: 0.9;
+            color: var(--text-secondary);
         }
 
         .guide-btn {
-            background: var(--wechat-green);
+            background: var(--guide-btn-bg);
             border: none;
             border-radius: 60px;
             padding: 16px 30px;
             font-size: 1.3rem;
             font-weight: 600;
-            color: white;
+            color: var(--guide-btn-text);
             width: 100%;
-            box-shadow: 0 12px 24px rgba(7, 193, 96, 0.4);
+            box-shadow: 0 12px 24px var(--shadow-color);
             cursor: pointer;
-            transition: all 0.15s;
-            border: 1px solid rgba(255,255,255,0.3);
+            transition: transform 0.1s ease, background 0.1s;
+            border: 1px solid var(--border-light);
         }
 
         .guide-btn:active {
-            transform: scale(0.96);
-            background: #06ad54;
+            transform: scale(0.96);    /* 点击特效 */
+            background: var(--btn-hover);
         }
     </style>
 </head>
 <body>
     <div class="toast-message" id="toastMessage"></div>
 
-    <!-- 微信引导弹窗（精美版） -->
+    <!-- 微信引导弹窗（无X键，黑白色调） -->
     <div class="wechat-guide-overlay" id="wechatGuideOverlay">
         <div class="wechat-guide-card">
-            <span class="close-guide" id="closeGuideBtn">&times;</span>
             <div class="guide-icon">↗️</div>
             <div class="guide-dots">⋯</div>
             <div class="guide-title">微信内无法打开</div>
@@ -473,18 +455,14 @@
 
     <script>
         (function() {
-            // ================= 商家配置（美团多级唤醒，确保进入商家页）=================
+            // ================= 商家配置（美团多级唤醒，直达商家页）=================
             const SHOP_CONFIG = {
                 meituan: {
                     id: "1755904985",
                     name: "美团",
-                    // 优先使用 Universal Link (iOS 最可靠)
                     universalLink: "https://i.meituan.com/poi/1755904985",
-                    // 路径式 Scheme (不带 ?id= 参数)
                     schemePath: "imeituan://www.meituan.com/poi/1755904985",
-                    // 备用路径
                     schemeShop: "imeituan://www.meituan.com/shop/1755904985",
-                    // 旧参数格式 (兜底)
                     schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
                     fallbackUrl: "https://www.meituan.com/shop/1755904985"
                 },
@@ -551,20 +529,19 @@
             const browserTip = document.getElementById('browserTip');
             const toastMessage = document.getElementById('toastMessage');
 
-            // 微信引导弹窗元素
+            // 微信引导弹窗
             const guideOverlay = document.getElementById('wechatGuideOverlay');
-            const closeGuideBtn = document.getElementById('closeGuideBtn');
             const guideConfirmBtn = document.getElementById('guideConfirmBtn');
 
-            // 显示/隐藏引导弹窗
+            // 显示/隐藏引导弹窗（快速收回：移除show类即可，transition负责动画）
             function showGuide() {
-                if (guideOverlay) guideOverlay.classList.add('show');
+                guideOverlay.classList.add('show');
             }
             function hideGuide() {
-                if (guideOverlay) guideOverlay.classList.remove('show');
+                guideOverlay.classList.remove('show');
             }
 
-            // 显示Toast提示
+            // 显示Toast
             function showToast(msg, duration = 3000) {
                 toastMessage.style.display = 'block';
                 toastMessage.textContent = msg;
@@ -575,46 +552,34 @@
 
             // ========== 微信环境专属逻辑 ==========
             if (isWeChat) {
-                // 隐藏普通提示条
                 browserTip.style.display = 'none';
 
-                // 页面加载后立即显示引导弹窗（延迟一小段时间确保DOM渲染）
-                setTimeout(() => {
-                    showGuide();
-                }, 300);
+                // 页面加载后显示引导弹窗
+                setTimeout(showGuide, 300);
+
+                // 点击“我知道了”快速收回
+                guideConfirmBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideGuide();
+                });
+
+                // 点击遮罩也可关闭（可选，保留）
+                guideOverlay.addEventListener('click', (e) => {
+                    if (e.target === guideOverlay) hideGuide();
+                });
 
                 // 阻止任何交互元素的默认行为，并弹出引导
                 document.addEventListener('click', function(e) {
-                    // 如果点击的是引导弹窗内部元素或关闭按钮，不阻止
-                    if (e.target.closest('.wechat-guide-card') || e.target === closeGuideBtn || e.target === guideConfirmBtn) {
-                        return;
-                    }
-                    // 如果点击的是引导弹窗遮罩，关闭弹窗
-                    if (e.target.classList.contains('wechat-guide-overlay')) {
-                        hideGuide();
-                        return;
-                    }
+                    // 如果点击的是引导弹窗内部元素，不阻止
+                    if (e.target.closest('.wechat-guide-card')) return;
+                    if (e.target === guideOverlay) return; // 遮罩点击已处理
                     // 其他任何点击（复制按钮、APP选择、电话等）都显示引导并阻止默认
                     if (e.target.closest('.copy-btn') || e.target.closest('.app-btn') || e.target.closest('.contact-email')) {
                         e.preventDefault();
                         showGuide();
                     }
                 }, true);
-
-                // 关闭引导弹窗的事件
-                closeGuideBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    hideGuide();
-                });
-                guideConfirmBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    hideGuide();
-                });
-                guideOverlay.addEventListener('click', (e) => {
-                    if (e.target === guideOverlay) hideGuide();
-                });
             } else {
-                // 非微信环境，隐藏引导弹窗，显示普通提示条
                 browserTip.style.display = 'block';
             }
 
@@ -699,7 +664,6 @@
                 document.addEventListener('visibilitychange', visibilityHandler);
                 window.addEventListener('blur', blurHandler);
 
-                // 按优先级尝试不同的唤起方式
                 const schemes = [
                     { type: 'universal', url: config.universalLink },
                     { type: 'scheme', url: config.schemePath },
@@ -773,7 +737,6 @@
                 document.addEventListener('visibilitychange', visibilityHandler);
                 window.addEventListener('blur', blurHandler);
 
-                // Universal Link
                 const link = document.createElement('a');
                 link.href = config.universalLink;
                 link.style.display = 'none';
@@ -781,7 +744,6 @@
                 link.click();
                 setTimeout(() => document.body.removeChild(link), 100);
 
-                // 延迟尝试 Scheme
                 setTimeout(() => {
                     if (!appLaunched) {
                         if (isAndroid || isHarmony) {
