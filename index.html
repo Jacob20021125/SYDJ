@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 ·好评宝</title>
+    <title>商家好评 · 好评宝）</title>
     <style>
         * {
             margin: 0;
@@ -22,8 +22,7 @@
             --btn-bg: rgba(255, 255, 255, 0.7);
             --btn-hover: rgba(255, 255, 255, 0.9);
             --warning-bg: rgba(255, 230, 200, 0.7);
-            --wechat-bg: rgba(26, 173, 25, 0.1);
-            --wechat-border: rgba(26, 173, 25, 0.3);
+            --wechat-green: #07c160;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -37,8 +36,7 @@
                 --btn-bg: rgba(60, 60, 60, 0.7);
                 --btn-hover: rgba(80, 80, 80, 0.9);
                 --warning-bg: rgba(80, 60, 30, 0.7);
-                --wechat-bg: rgba(26, 173, 25, 0.2);
-                --wechat-border: rgba(26, 173, 25, 0.4);
+                --wechat-green: #06ad54;
             }
         }
 
@@ -172,7 +170,7 @@
             text-decoration: none;
         }
 
-        /* 通用模态框样式（用于选择APP） */
+        /* 通用模态框（用于选择APP） */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -296,122 +294,133 @@
             max-width: 80%;
         }
 
-        /* 微信引导弹窗专属样式 */
-        .wechat-guide-modal {
+        /* ========== 精美微信引导弹窗 ========== */
+        .wechat-guide-overlay {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 3000;
-            transition: opacity 0.2s;
+            transition: opacity 0.3s ease;
             opacity: 0;
             pointer-events: none;
         }
 
-        .wechat-guide-modal.show {
+        .wechat-guide-overlay.show {
             opacity: 1;
             pointer-events: auto;
         }
 
-        .wechat-guide-content {
+        .wechat-guide-card {
             background: var(--card-bg);
             backdrop-filter: blur(40px) saturate(200%);
             -webkit-backdrop-filter: blur(40px) saturate(200%);
-            border-radius: 60px;
-            padding: 40px 30px;
+            border-radius: 48px;
+            padding: 36px 28px;
             max-width: 380px;
             width: 85%;
-            border: 2px solid #07c160; /* 微信绿 */
+            border: 2px solid var(--wechat-green);
             box-shadow: 0 30px 60px var(--shadow-color), 0 0 0 2px rgba(7, 193, 96, 0.3);
             text-align: center;
             color: var(--text-primary);
             position: relative;
+            animation: guidePop 0.4s cubic-bezier(0.21, 1.11, 0.35, 1.1);
         }
 
-        .wechat-guide-content .close-icon {
+        @keyframes guidePop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .close-guide {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 28px;
-            line-height: 1;
-            cursor: pointer;
-            color: var(--text-secondary);
-            background: var(--btn-bg);
-            width: 40px;
-            height: 40px;
+            top: 18px;
+            right: 18px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
+            background: var(--btn-bg);
+            border: 1px solid var(--border-light);
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid var(--border-light);
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.1s;
+            box-shadow: 0 4px 8px var(--shadow-color);
         }
 
-        .wechat-guide-content h2 {
-            font-size: 1.9rem;
-            margin-bottom: 20px;
-            color: #07c160;
-            font-weight: 700;
+        .close-guide:active {
+            transform: scale(0.9);
+            background: var(--btn-hover);
         }
 
-        .arrow-container {
-            position: relative;
-            margin: 20px 0 30px;
-            height: 100px;
-        }
-
-        .big-arrow {
+        .guide-icon {
             font-size: 80px;
             line-height: 1;
-            display: block;
-            transform: rotate(25deg);
-            color: #ffc107;
+            margin-bottom: 10px;
             filter: drop-shadow(0 10px 8px rgba(0,0,0,0.2));
-            animation: bounce 1s infinite alternate;
+            animation: arrowBounce 1.2s infinite alternate ease-in-out;
         }
 
-        @keyframes bounce {
-            from { transform: rotate(25deg) translateY(0); }
-            to { transform: rotate(25deg) translateY(-15px); }
+        @keyframes arrowBounce {
+            from { transform: translateY(0) rotate(25deg); }
+            to { transform: translateY(-20px) rotate(25deg); }
         }
 
-        .dots-icon {
-            font-size: 50px;
-            letter-spacing: 10px;
-            color: var(--text-primary);
-            margin: 10px 0;
+        .guide-dots {
+            font-size: 60px;
+            letter-spacing: 12px;
+            color: var(--wechat-green);
+            margin: 0 0 15px;
+            text-shadow: 0 4px 8px var(--shadow-color);
+        }
+
+        .guide-title {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--wechat-green);
+            margin-bottom: 16px;
+            text-shadow: 0 2px 4px var(--shadow-color);
         }
 
         .guide-text {
             font-size: 1.3rem;
             font-weight: 600;
-            margin: 25px 0 15px;
-            background: rgba(7, 193, 96, 0.2);
-            padding: 12px 0;
+            background: rgba(7, 193, 96, 0.15);
+            padding: 14px 0;
             border-radius: 60px;
+            margin: 20px 0 12px;
+            border: 1px solid rgba(7, 193, 96, 0.3);
         }
 
-        .guide-detail {
+        .guide-sub {
             font-size: 1.1rem;
-            margin-bottom: 30px;
+            margin-bottom: 28px;
             opacity: 0.9;
         }
 
         .guide-btn {
-            background: #07c160;
+            background: var(--wechat-green);
             border: none;
             border-radius: 60px;
-            padding: 16px 40px;
+            padding: 16px 30px;
             font-size: 1.3rem;
             font-weight: 600;
             color: white;
-            box-shadow: 0 10px 20px rgba(7, 193, 96, 0.4);
+            width: 100%;
+            box-shadow: 0 12px 24px rgba(7, 193, 96, 0.4);
             cursor: pointer;
             transition: all 0.15s;
             border: 1px solid rgba(255,255,255,0.3);
-            width: 100%;
         }
 
         .guide-btn:active {
@@ -421,462 +430,429 @@
     </style>
 </head>
 <body>
-<div class="toast-message" id="toastMessage"></div>
+    <div class="toast-message" id="toastMessage"></div>
 
-<!-- 微信引导弹窗 (默认隐藏) -->
-<div class="wechat-guide-modal" id="wechatGuideModal">
-    <div class="wechat-guide-content">
-        <span class="close-icon" id="closeGuideModal">&times;</span>
-        <h2>⚠️ 微信内无法直接打开</h2>
-        <div class="arrow-container">
-            <span class="big-arrow">↗️</span>
+    <!-- 微信引导弹窗（精美版） -->
+    <div class="wechat-guide-overlay" id="wechatGuideOverlay">
+        <div class="wechat-guide-card">
+            <span class="close-guide" id="closeGuideBtn">&times;</span>
+            <div class="guide-icon">↗️</div>
+            <div class="guide-dots">⋯</div>
+            <div class="guide-title">微信内无法打开</div>
+            <div class="guide-text">点击右上角「···」</div>
+            <div class="guide-sub">选择「浏览器打开」即可正常跳转APP</div>
+            <button class="guide-btn" id="guideConfirmBtn">我知道了</button>
         </div>
-        <div class="dots-icon">⋯</div>
-        <div class="guide-text">点击右上角「···」</div>
-        <div class="guide-detail">选择「浏览器打开」即可正常跳转APP</div>
-        <button class="guide-btn" id="guideConfirmBtn">知道了</button>
     </div>
-</div>
 
-<div class="glass-container" id="mainContainer">
-    <!-- 动态好评列表 -->
-    <div id="reviewsContainer" class="reviews-list"></div>
+    <div class="glass-container">
+        <!-- 动态好评列表 -->
+        <div id="reviewsContainer" class="reviews-list"></div>
 
-    <!-- 普通浏览器提示条（微信环境会隐藏） -->
-    <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 自动跳转商家页面</div>
+        <!-- 普通浏览器提示条（微信环境隐藏） -->
+        <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 自动跳转商家页面</div>
 
-    <!-- 底部联系方式 -->
-    <div class="contact-footer">
-        <span>📬 商务合作 · 好评宝</span>
-        <a href="tel:15617743996" class="contact-email">📞15617743996</a>
-    </div>
-</div>
-
-<!-- 选择APP模态框 -->
-<div class="modal-overlay" id="appChoiceModal">
-    <div class="modal-glass">
-        <div class="modal-title">✨ 查看商家页面</div>
-        <div class="app-options">
-            <div class="app-btn douyin" id="chooseDouyin">🎵 抖音 · 进店</div>
-            <div class="app-btn meituan" id="chooseMeituan">🍜 美团 · 进店</div>
+        <!-- 底部联系方式 -->
+        <div class="contact-footer">
+            <span>📬 商务合作 · 好评宝</span>
+            <a href="tel:15617743996" class="contact-email">📞15617743996</a>
         </div>
-        <div class="cancel-btn" id="closeModal">取消</div>
     </div>
-</div>
 
-<script>
-    (function() {
-        // ================= 商家配置（美团多级唤醒方案）=================
-        const SHOP_CONFIG = {
-            meituan: {
-                id: "1755904985",
-                name: "美团",
-                universalLink: "https://i.meituan.com/poi/1755904985",
-                schemeDetail: "imeituan://www.meituan.com/poi?id=1755904985",
-                schemeShop: "imeituan://www.meituan.com/shop/1755904985",
-                schemeGeneral: "imeituan://www.meituan.com/nav/poi/1755904985",
-                fallbackUrl: "https://www.meituan.com/shop/1755904985"
-            },
-            douyin: {
-                id: "7613748240831546163",
-                name: "抖音",
-                universalLink: "https://www.douyin.com/aweme/poi/7613748240831546163",
-                scheme: "snssdk1128://poi/detail?id=7613748240831546163",
-                fallbackUrl: "https://www.douyin.com/poi/detail?poi_id=7613748240831546163"
+    <!-- 选择APP模态框 -->
+    <div class="modal-overlay" id="appChoiceModal">
+        <div class="modal-glass">
+            <div class="modal-title">✨ 查看商家页面</div>
+            <div class="app-options">
+                <div class="app-btn douyin" id="chooseDouyin">🎵 抖音 · 进店</div>
+                <div class="app-btn meituan" id="chooseMeituan">🍜 美团 · 进店</div>
+            </div>
+            <div class="cancel-btn" id="closeModal">取消</div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ================= 商家配置（美团多级唤醒，确保进入商家页）=================
+            const SHOP_CONFIG = {
+                meituan: {
+                    id: "1755904985",
+                    name: "美团",
+                    // 优先使用 Universal Link (iOS 最可靠)
+                    universalLink: "https://i.meituan.com/poi/1755904985",
+                    // 路径式 Scheme (不带 ?id= 参数)
+                    schemePath: "imeituan://www.meituan.com/poi/1755904985",
+                    // 备用路径
+                    schemeShop: "imeituan://www.meituan.com/shop/1755904985",
+                    // 旧参数格式 (兜底)
+                    schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
+                    fallbackUrl: "https://www.meituan.com/shop/1755904985"
+                },
+                douyin: {
+                    id: "7613748240831546163",
+                    name: "抖音",
+                    universalLink: "https://www.douyin.com/aweme/poi/7613748240831546163",
+                    scheme: "snssdk1128://poi/detail?id=7613748240831546163",
+                    fallbackUrl: "https://www.douyin.com/poi/detail?poi_id=7613748240831546163"
+                }
+            };
+
+            // 好评话库
+            const REVIEW_TEXTS = [
+                "环境干净整洁，空气流通不闷，电脑配置高游戏流畅不卡顿，键鼠手感好，整体上网体验超棒。",
+                "网速超快，玩大型游戏毫无压力，屏幕清晰画质好，座椅舒服久坐不累，服务也很贴心周到。",
+                "网咖环境高级又安静，卫生做得很到位，设备新反应快，和朋友开黑打游戏特别顺畅，性价比很高。",
+                "电脑配置很高，吃鸡、LOL 运行流畅，没有延迟也不卡顿，耳机音效好，整体体验非常满意。",
+                "环境舒适不嘈杂，灯光柔和不刺眼，机器干净无异味，店员态度好，在这里上网氛围超赞。",
+                "位置好找，店内整洁宽敞，设备维护得很好，游戏更新及时，网速一直很稳定，强烈推荐。",
+                "座椅超级舒服，久坐腰颈都不累，电脑反应迅速，多开程序也不卡，是休闲放松的好去处。",
+                "环境清新无烟味，卫生干净，外设手感一流，玩游戏沉浸感很强，服务热情又周到。",
+                "网咖装修时尚，氛围超棒，电脑配置高端，画面流畅，价格实惠，性价比真的绝了。",
+                "网速稳定不掉线，设备崭新好用，空间宽敞不拥挤，店员服务及时，体验感直接满分。",
+                "环境安静适合开黑，电脑性能强劲，游戏加载超快，耳机清晰，整体上网非常舒适。",
+                "卫生条件一流，桌面干净整洁，电脑不卡顿，外设好用，服务态度好，值得经常来。",
+                "店内环境舒适，空调温度适中，机器配置高，游戏体验极佳，朋友聚会开黑首选这里。",
+                "设备很新，操作流畅，屏幕高清不伤眼，网速飞快，环境安静，上网很放松。",
+                "网咖服务贴心，环境雅致，电脑运行稳定，玩游戏毫无压力，性价比超高。",
+                "空间大不压抑，空气清新，键鼠手感舒适，游戏多更新快，店员热情有礼貌。",
+                "网速给力不延迟，电脑配置高，画质清晰，环境干净安静，上网体验超预期。",
+                "环境简约大气，卫生做得好，设备反应快，玩大型游戏超顺畅，真心强烈推荐。",
+                "座椅舒适包裹性好，久坐不疲劳，电脑性能强，网速快，服务到位很满意。",
+                "店内氛围好，适合娱乐放松，机器干净好用，游戏流畅，价格合理，值得再来。",
+                "环境整洁无烟味，设备维护好，电脑不卡顿，网速稳定，服务态度超棒。",
+                "网咖配置在线，玩 3A 大作毫无压力，屏幕清晰，音效好，体验感直接拉满。",
+                "位置便利，环境舒适安静，电脑速度快，游戏齐全，服务贴心，性价比很高。",
+                "卫生干净整洁，设备崭新，操作流畅，网速超快，环境好，上网很舒服。",
+                "店内灯光柔和，环境安静不吵，电脑性能强，外设好用，服务及时又周到。",
+                "高端配置，流畅运行各种游戏，无卡顿无延迟，环境舒适，是电竞爱好者的福音。",
+                "网咖环境好，空气流通，电脑反应快，座椅舒服，服务热情，体验非常不错。",
+                "设备齐全且崭新，网速稳定，游戏加载快，环境干净安静，上网很享受。",
+                "空间宽敞，环境雅致，电脑配置高，玩游戏超爽，服务好，价格实惠。",
+                "整体体验超棒，环境干净卫生，设备流畅不卡，服务贴心，以后会常来打卡。"
+            ];
+
+            const INIT_REVIEWS = REVIEW_TEXTS.map((text, index) => ({ id: `r${index + 1}`, text }));
+            let currentReviews = INIT_REVIEWS.map(item => ({ ...item }));
+            let selectedReviewId = null;
+
+            // 环境检测
+            const ua = navigator.userAgent.toLowerCase();
+            const isWeChat = ua.indexOf('micromessenger') !== -1;
+            const isIOS = /iphone|ipad|ipod/.test(ua);
+            const isAndroid = /android/.test(ua);
+            const isHarmony = ua.indexOf('harmony') !== -1;
+
+            // DOM 元素
+            const reviewsContainer = document.getElementById('reviewsContainer');
+            const modalOverlay = document.getElementById('appChoiceModal');
+            const closeModalBtn = document.getElementById('closeModal');
+            const chooseDouyin = document.getElementById('chooseDouyin');
+            const chooseMeituan = document.getElementById('chooseMeituan');
+            const browserTip = document.getElementById('browserTip');
+            const toastMessage = document.getElementById('toastMessage');
+
+            // 微信引导弹窗元素
+            const guideOverlay = document.getElementById('wechatGuideOverlay');
+            const closeGuideBtn = document.getElementById('closeGuideBtn');
+            const guideConfirmBtn = document.getElementById('guideConfirmBtn');
+
+            // 显示/隐藏引导弹窗
+            function showGuide() {
+                if (guideOverlay) guideOverlay.classList.add('show');
             }
-        };
+            function hideGuide() {
+                if (guideOverlay) guideOverlay.classList.remove('show');
+            }
 
-        // 好评话库
-        const REVIEW_TEXTS = [
-            "环境干净整洁，空气流通不闷，电脑配置高游戏流畅不卡顿，键鼠手感好，整体上网体验超棒。",
-            "网速超快，玩大型游戏毫无压力，屏幕清晰画质好，座椅舒服久坐不累，服务也很贴心周到。",
-            "网咖环境高级又安静，卫生做得很到位，设备新反应快，和朋友开黑打游戏特别顺畅，性价比很高。",
-            "电脑配置很高，吃鸡、LOL 运行流畅，没有延迟也不卡顿，耳机音效好，整体体验非常满意。",
-            "环境舒适不嘈杂，灯光柔和不刺眼，机器干净无异味，店员态度好，在这里上网氛围超赞。",
-            "位置好找，店内整洁宽敞，设备维护得很好，游戏更新及时，网速一直很稳定，强烈推荐。",
-            "座椅超级舒服，久坐腰颈都不累，电脑反应迅速，多开程序也不卡，是休闲放松的好去处。",
-            "环境清新无烟味，卫生干净，外设手感一流，玩游戏沉浸感很强，服务热情又周到。",
-            "网咖装修时尚，氛围超棒，电脑配置高端，画面流畅，价格实惠，性价比真的绝了。",
-            "网速稳定不掉线，设备崭新好用，空间宽敞不拥挤，店员服务及时，体验感直接满分。",
-            "环境安静适合开黑，电脑性能强劲，游戏加载超快，耳机清晰，整体上网非常舒适。",
-            "卫生条件一流，桌面干净整洁，电脑不卡顿，外设好用，服务态度好，值得经常来。",
-            "店内环境舒适，空调温度适中，机器配置高，游戏体验极佳，朋友聚会开黑首选这里。",
-            "设备很新，操作流畅，屏幕高清不伤眼，网速飞快，环境安静，上网很放松。",
-            "网咖服务贴心，环境雅致，电脑运行稳定，玩游戏毫无压力，性价比超高。",
-            "空间大不压抑，空气清新，键鼠手感舒适，游戏多更新快，店员热情有礼貌。",
-            "网速给力不延迟，电脑配置高，画质清晰，环境干净安静，上网体验超预期。",
-            "环境简约大气，卫生做得好，设备反应快，玩大型游戏超顺畅，真心强烈推荐。",
-            "座椅舒适包裹性好，久坐不疲劳，电脑性能强，网速快，服务到位很满意。",
-            "店内氛围好，适合娱乐放松，机器干净好用，游戏流畅，价格合理，值得再来。",
-            "环境整洁无烟味，设备维护好，电脑不卡顿，网速稳定，服务态度超棒。",
-            "网咖配置在线，玩 3A 大作毫无压力，屏幕清晰，音效好，体验感直接拉满。",
-            "位置便利，环境舒适安静，电脑速度快，游戏齐全，服务贴心，性价比很高。",
-            "卫生干净整洁，设备崭新，操作流畅，网速超快，环境好，上网很舒服。",
-            "店内灯光柔和，环境安静不吵，电脑性能强，外设好用，服务及时又周到。",
-            "高端配置，流畅运行各种游戏，无卡顿无延迟，环境舒适，是电竞爱好者的福音。",
-            "网咖环境好，空气流通，电脑反应快，座椅舒服，服务热情，体验非常不错。",
-            "设备齐全且崭新，网速稳定，游戏加载快，环境干净安静，上网很享受。",
-            "空间宽敞，环境雅致，电脑配置高，玩游戏超爽，服务好，价格实惠。",
-            "整体体验超棒，环境干净卫生，设备流畅不卡，服务贴心，以后会常来打卡。"
-        ];
+            // 显示Toast提示
+            function showToast(msg, duration = 3000) {
+                toastMessage.style.display = 'block';
+                toastMessage.textContent = msg;
+                setTimeout(() => {
+                    toastMessage.style.display = 'none';
+                }, duration);
+            }
 
-        // 初始化好评列表
-        const INIT_REVIEWS = REVIEW_TEXTS.map((text, index) => ({
-            id: `r${index + 1}`,
-            text: text
-        }));
-        let currentReviews = INIT_REVIEWS.map(item => ({ ...item }));
-        let selectedReviewId = null;
+            // ========== 微信环境专属逻辑 ==========
+            if (isWeChat) {
+                // 隐藏普通提示条
+                browserTip.style.display = 'none';
 
-        // 检测环境
-        const ua = navigator.userAgent.toLowerCase();
-        const isWeChat = ua.indexOf('micromessenger') !== -1;
-        const isIOS = /iphone|ipad|ipod/.test(ua);
-        const isAndroid = /android/.test(ua);
-        const isHarmony = ua.indexOf('harmony') !== -1;
+                // 页面加载后立即显示引导弹窗（延迟一小段时间确保DOM渲染）
+                setTimeout(() => {
+                    showGuide();
+                }, 300);
 
-        // DOM 元素
-        const reviewsContainer = document.getElementById('reviewsContainer');
-        const modalOverlay = document.getElementById('appChoiceModal');
-        const closeModalBtn = document.getElementById('closeModal');
-        const chooseDouyin = document.getElementById('chooseDouyin');
-        const chooseMeituan = document.getElementById('chooseMeituan');
-        const browserTip = document.getElementById('browserTip');
-        const toastMessage = document.getElementById('toastMessage');
-        const wechatGuideModal = document.getElementById('wechatGuideModal');
-        const closeGuideModal = document.getElementById('closeGuideModal');
-        const guideConfirmBtn = document.getElementById('guideConfirmBtn');
+                // 阻止任何交互元素的默认行为，并弹出引导
+                document.addEventListener('click', function(e) {
+                    // 如果点击的是引导弹窗内部元素或关闭按钮，不阻止
+                    if (e.target.closest('.wechat-guide-card') || e.target === closeGuideBtn || e.target === guideConfirmBtn) {
+                        return;
+                    }
+                    // 如果点击的是引导弹窗遮罩，关闭弹窗
+                    if (e.target.classList.contains('wechat-guide-overlay')) {
+                        hideGuide();
+                        return;
+                    }
+                    // 其他任何点击（复制按钮、APP选择、电话等）都显示引导并阻止默认
+                    if (e.target.closest('.copy-btn') || e.target.closest('.app-btn') || e.target.closest('.contact-email')) {
+                        e.preventDefault();
+                        showGuide();
+                    }
+                }, true);
 
-        // 显示微信引导弹窗
-        function showWechatGuide() {
-            wechatGuideModal.classList.add('show');
-        }
+                // 关闭引导弹窗的事件
+                closeGuideBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideGuide();
+                });
+                guideConfirmBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    hideGuide();
+                });
+                guideOverlay.addEventListener('click', (e) => {
+                    if (e.target === guideOverlay) hideGuide();
+                });
+            } else {
+                // 非微信环境，隐藏引导弹窗，显示普通提示条
+                browserTip.style.display = 'block';
+            }
 
-        function hideWechatGuide() {
-            wechatGuideModal.classList.remove('show');
-        }
+            // 随机挑选5条
+            function pickRandomFive(arr) {
+                if (arr.length <= 5) return arr.slice();
+                const shuffled = [...arr];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled.slice(0, 5);
+            }
 
-        // 显示Toast提示（备用，但微信内主要用引导弹窗）
-        function showToast(msg, duration = 3000) {
-            toastMessage.style.display = 'block';
-            toastMessage.textContent = msg;
-            setTimeout(() => {
-                toastMessage.style.display = 'none';
-            }, duration);
-        }
-
-        // 微信环境特殊处理
-        if (isWeChat) {
-            // 隐藏普通提示条，显示引导弹窗（初始自动弹出）
-            browserTip.style.display = 'none';
-            // 页面加载后自动弹出引导
-            setTimeout(() => {
-                showWechatGuide();
-            }, 500);
-
-            // 所有按钮点击（包括复制、选择APP等）都弹出引导
-            document.addEventListener('click', function(e) {
-                // 如果点击的是引导弹窗内的关闭或知道了按钮，不拦截
-                if (e.target.closest('#closeGuideModal') || e.target.closest('#guideConfirmBtn') || e.target.closest('.wechat-guide-content')) {
+            // 渲染好评卡片
+            function renderReviews() {
+                const listToShow = pickRandomFive(currentReviews);
+                if (listToShow.length === 0) {
+                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 暂时没有好评了，刷新页面恢复~</div>';
                     return;
                 }
-                // 如果点击的是引导弹窗背景（遮罩），也关闭
-                if (e.target.classList.contains('wechat-guide-modal')) {
-                    hideWechatGuide();
-                    return;
+                let htmlStr = '';
+                listToShow.forEach(item => {
+                    htmlStr += `
+                        <div class="review-card">
+                            <span class="review-text">${item.text}</span>
+                            <button class="copy-btn" data-id="${item.id}">复制</button>
+                        </div>
+                    `;
+                });
+                reviewsContainer.innerHTML = htmlStr;
+            }
+
+            // 库存提醒
+            function checkStockAndAlert() {
+                const len = currentReviews.length;
+                if (len === 20) showToast('📢 库存剩余 20 条');
+                else if (len === 10) showToast('📢 库存剩余 10 条');
+                else if (len === 5) showToast('📢 库存只剩 5 条啦！');
+            }
+
+            // 删除好评
+            function deleteReviewById(id) {
+                const beforeLength = currentReviews.length;
+                currentReviews = currentReviews.filter(item => item.id !== id);
+                if (beforeLength !== currentReviews.length) {
+                    renderReviews();
+                    checkStockAndAlert();
+                    return true;
                 }
-                // 其他任何点击都弹出引导（且阻止默认行为）
-                if (e.target.closest('.copy-btn') || e.target.closest('.app-btn') || e.target.closest('.contact-email')) {
-                    e.preventDefault();
-                    showWechatGuide();
+                return false;
+            }
+
+            // ========== 美团多级唤醒（优化直达商家页） ==========
+            function jumpToMeituan() {
+                const config = SHOP_CONFIG.meituan;
+                const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
+                if (selectedReview) {
+                    navigator.clipboard.writeText(selectedReview.text).catch(() => {});
                 }
-            }, true);
-        } else {
-            browserTip.style.display = 'block';
-        }
 
-        // 引导弹窗关闭事件
-        closeGuideModal.addEventListener('click', hideWechatGuide);
-        guideConfirmBtn.addEventListener('click', hideWechatGuide);
-        wechatGuideModal.addEventListener('click', function(e) {
-            if (e.target === wechatGuideModal) {
-                hideWechatGuide();
-            }
-        });
+                let appLaunched = false;
 
-        // 随机挑选5条
-        function pickRandomFive(arr) {
-            if (arr.length <= 5) return arr.slice();
-            const shuffled = [...arr];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled.slice(0, 5);
-        }
-
-        // 渲染好评卡片
-        function renderReviews() {
-            const listToShow = pickRandomFive(currentReviews);
-            if (listToShow.length === 0) {
-                reviewsContainer.innerHTML = `<div class="empty-message">✨ 暂时没有好评了，刷新页面恢复~</div>`;
-                return;
-            }
-            let htmlStr = '';
-            listToShow.forEach(item => {
-                htmlStr += `
-                    <div class="review-card">
-                        <span class="review-text">${item.text}</span>
-                        <button class="copy-btn" data-id="${item.id}">复制</button>
-                    </div>
-                `;
-            });
-            reviewsContainer.innerHTML = htmlStr;
-        }
-
-        // 检查剩余库存
-        function checkStockAndAlert() {
-            const len = currentReviews.length;
-            if (len === 20) showToast('📢 库存剩余 20 条');
-            else if (len === 10) showToast('📢 库存剩余 10 条');
-            else if (len === 5) showToast('📢 库存只剩 5 条啦！');
-        }
-
-        // 删除指定ID的好评
-        function deleteReviewById(id) {
-            const beforeLength = currentReviews.length;
-            currentReviews = currentReviews.filter(item => item.id !== id);
-            if (beforeLength !== currentReviews.length) {
-                renderReviews();
-                checkStockAndAlert();
-                return true;
-            }
-            return false;
-        }
-
-        // ========== 多级唤醒函数：针对美团APP优化 ==========
-        function jumpToMeituan() {
-            const config = SHOP_CONFIG.meituan;
-            
-            // 复制好评文案
-            const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
-            if (selectedReview) {
-                navigator.clipboard.writeText(selectedReview.text).catch(() => {});
-            }
-
-            // 标记唤醒状态
-            let appLaunched = false;
-
-            // 监听页面隐藏（APP唤起成功）
-            const visibilityHandler = function() {
-                if (document.hidden) {
+                const visibilityHandler = function() {
+                    if (document.hidden) {
+                        appLaunched = true;
+                        cleanUp();
+                        showToast('✅ 美团APP已打开', 2000);
+                    }
+                };
+                const blurHandler = function() {
                     appLaunched = true;
                     cleanUp();
                     showToast('✅ 美团APP已打开', 2000);
+                };
+                function cleanUp() {
+                    document.removeEventListener('visibilitychange', visibilityHandler);
+                    window.removeEventListener('blur', blurHandler);
+                    if (window._appJumpTimer) clearTimeout(window._appJumpTimer);
                 }
-            };
 
-            const blurHandler = function() {
-                appLaunched = true;
-                cleanUp();
-                showToast('✅ 美团APP已打开', 2000);
-            };
+                document.addEventListener('visibilitychange', visibilityHandler);
+                window.addEventListener('blur', blurHandler);
 
-            function cleanUp() {
-                document.removeEventListener('visibilitychange', visibilityHandler);
-                window.removeEventListener('blur', blurHandler);
-                if (window._appJumpTimer) {
-                    clearTimeout(window._appJumpTimer);
-                    window._appJumpTimer = null;
-                }
-            }
+                // 按优先级尝试不同的唤起方式
+                const schemes = [
+                    { type: 'universal', url: config.universalLink },
+                    { type: 'scheme', url: config.schemePath },
+                    { type: 'scheme', url: config.schemeShop },
+                    { type: 'scheme', url: config.schemeParam }
+                ];
 
-            document.addEventListener('visibilitychange', visibilityHandler);
-            window.addEventListener('blur', blurHandler);
-
-            // 按顺序尝试不同的scheme
-            const schemes = [
-                { type: 'universal', url: config.universalLink },
-                { type: 'scheme', url: config.schemeShop },      // 先试商家首页
-                { type: 'scheme', url: config.schemeGeneral },   // 再试通用跳转
-                { type: 'scheme', url: config.schemeDetail }     // 最后试详情页
-            ];
-
-            function tryNextScheme(index) {
-                if (appLaunched || index >= schemes.length) return;
-                
-                const scheme = schemes[index];
-                
-                if (scheme.type === 'universal') {
-                    const link = document.createElement('a');
-                    link.href = scheme.url;
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    setTimeout(() => {
-                        document.body.removeChild(link);
-                    }, 100);
-                } else {
-                    if (isAndroid || isHarmony) {
-                        const iframe = document.createElement('iframe');
-                        iframe.style.display = 'none';
-                        iframe.src = scheme.url;
-                        document.body.appendChild(iframe);
-                        setTimeout(() => {
-                            document.body.removeChild(iframe);
-                        }, 100);
+                function tryNext(index) {
+                    if (appLaunched || index >= schemes.length) return;
+                    const item = schemes[index];
+                    if (item.type === 'universal') {
+                        const link = document.createElement('a');
+                        link.href = item.url;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        setTimeout(() => document.body.removeChild(link), 100);
                     } else {
-                        window.location.href = scheme.url;
+                        if (isAndroid || isHarmony) {
+                            const iframe = document.createElement('iframe');
+                            iframe.style.display = 'none';
+                            iframe.src = item.url;
+                            document.body.appendChild(iframe);
+                            setTimeout(() => document.body.removeChild(iframe), 100);
+                        } else {
+                            window.location.href = item.url;
+                        }
                     }
+                    setTimeout(() => tryNext(index + 1), 300);
                 }
-                
-                setTimeout(() => {
+
+                tryNext(0);
+
+                window._appJumpTimer = setTimeout(() => {
                     if (!appLaunched) {
-                        tryNextScheme(index + 1);
+                        cleanUp();
+                        if (confirm('未成功唤起美团APP，是否前往网页版查看？')) {
+                            window.location.href = config.fallbackUrl;
+                        }
                     }
-                }, 300);
+                }, 3000);
             }
 
-            tryNextScheme(0);
-
-            window._appJumpTimer = setTimeout(() => {
-                if (!appLaunched) {
-                    cleanUp();
-                    if (confirm('未成功唤起美团APP，可能是APP版本问题。是否前往网页版查看？')) {
-                        window.location.href = config.fallbackUrl;
-                    }
+            // 抖音唤起
+            function jumpToDouyin() {
+                const config = SHOP_CONFIG.douyin;
+                const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
+                if (selectedReview) {
+                    navigator.clipboard.writeText(selectedReview.text).catch(() => {});
                 }
-            }, 3000);
-        }
 
-        // 抖音唤起
-        function jumpToDouyin() {
-            const config = SHOP_CONFIG.douyin;
-            
-            const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
-            if (selectedReview) {
-                navigator.clipboard.writeText(selectedReview.text).catch(() => {});
-            }
+                let appLaunched = false;
 
-            let appLaunched = false;
-
-            const visibilityHandler = function() {
-                if (document.hidden) {
+                const visibilityHandler = function() {
+                    if (document.hidden) {
+                        appLaunched = true;
+                        document.removeEventListener('visibilitychange', visibilityHandler);
+                        window.removeEventListener('blur', blurHandler);
+                        if (window._appJumpTimer) clearTimeout(window._appJumpTimer);
+                        showToast('✅ 抖音APP已打开', 2000);
+                    }
+                };
+                const blurHandler = function() {
                     appLaunched = true;
                     document.removeEventListener('visibilitychange', visibilityHandler);
                     window.removeEventListener('blur', blurHandler);
-                    if (window._appJumpTimer) {
-                        clearTimeout(window._appJumpTimer);
-                        window._appJumpTimer = null;
-                    }
+                    if (window._appJumpTimer) clearTimeout(window._appJumpTimer);
                     showToast('✅ 抖音APP已打开', 2000);
-                }
-            };
+                };
 
-            const blurHandler = function() {
-                appLaunched = true;
-                document.removeEventListener('visibilitychange', visibilityHandler);
-                window.removeEventListener('blur', blurHandler);
-                if (window._appJumpTimer) {
-                    clearTimeout(window._appJumpTimer);
-                    window._appJumpTimer = null;
-                }
-                showToast('✅ 抖音APP已打开', 2000);
-            };
+                document.addEventListener('visibilitychange', visibilityHandler);
+                window.addEventListener('blur', blurHandler);
 
-            document.addEventListener('visibilitychange', visibilityHandler);
-            window.addEventListener('blur', blurHandler);
+                // Universal Link
+                const link = document.createElement('a');
+                link.href = config.universalLink;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => document.body.removeChild(link), 100);
 
-            const link = document.createElement('a');
-            link.href = config.universalLink;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            setTimeout(() => {
-                document.body.removeChild(link);
-            }, 100);
-
-            setTimeout(() => {
-                if (!appLaunched) {
-                    if (isAndroid || isHarmony) {
-                        const iframe = document.createElement('iframe');
-                        iframe.style.display = 'none';
-                        iframe.src = config.scheme;
-                        document.body.appendChild(iframe);
-                        setTimeout(() => {
-                            document.body.removeChild(iframe);
-                        }, 100);
-                    } else {
-                        window.location.href = config.scheme;
+                // 延迟尝试 Scheme
+                setTimeout(() => {
+                    if (!appLaunched) {
+                        if (isAndroid || isHarmony) {
+                            const iframe = document.createElement('iframe');
+                            iframe.style.display = 'none';
+                            iframe.src = config.scheme;
+                            document.body.appendChild(iframe);
+                            setTimeout(() => document.body.removeChild(iframe), 100);
+                        } else {
+                            window.location.href = config.scheme;
+                        }
                     }
-                }
-            }, 300);
+                }, 300);
 
-            window._appJumpTimer = setTimeout(() => {
-                if (!appLaunched) {
-                    document.removeEventListener('visibilitychange', visibilityHandler);
-                    window.removeEventListener('blur', blurHandler);
-                    if (confirm('未成功唤起抖音APP，是否前往网页版查看？')) {
-                        window.location.href = config.fallbackUrl;
+                window._appJumpTimer = setTimeout(() => {
+                    if (!appLaunched) {
+                        document.removeEventListener('visibilitychange', visibilityHandler);
+                        window.removeEventListener('blur', blurHandler);
+                        if (confirm('未成功唤起抖音APP，是否前往网页版查看？')) {
+                            window.location.href = config.fallbackUrl;
+                        }
                     }
-                }
-            }, 3000);
-        }
+                }, 3000);
+            }
 
-        // 模态框控制（选择APP）
-        function hideModal() {
-            modalOverlay.classList.remove('show');
-            selectedReviewId = null;
-        }
+            // 模态框控制
+            function hideModal() {
+                modalOverlay.classList.remove('show');
+                selectedReviewId = null;
+            }
+            function showModal(id) {
+                selectedReviewId = id;
+                modalOverlay.classList.add('show');
+            }
 
-        function showModal(id) {
-            selectedReviewId = id;
-            modalOverlay.classList.add('show');
-        }
+            // 非微信环境才绑定唤起事件
+            if (!isWeChat) {
+                reviewsContainer.addEventListener('click', (e) => {
+                    const copyBtn = e.target.closest('.copy-btn');
+                    if (!copyBtn) return;
+                    const id = copyBtn.getAttribute('data-id');
+                    if (id) showModal(id);
+                });
 
-        // 事件绑定（非微信环境才绑定唤起事件，微信内已被拦截）
-        if (!isWeChat) {
-            reviewsContainer.addEventListener('click', (e) => {
-                const copyBtn = e.target.closest('.copy-btn');
-                if (!copyBtn) return;
-                const id = copyBtn.getAttribute('data-id');
-                if (id) showModal(id);
-            });
-
-            chooseDouyin.addEventListener('click', () => {
-                if (!selectedReviewId) {
+                chooseDouyin.addEventListener('click', () => {
+                    if (!selectedReviewId) { hideModal(); return; }
+                    deleteReviewById(selectedReviewId);
                     hideModal();
-                    return;
-                }
-                deleteReviewById(selectedReviewId);
-                hideModal();
-                jumpToDouyin();
-            });
+                    jumpToDouyin();
+                });
 
-            chooseMeituan.addEventListener('click', () => {
-                if (!selectedReviewId) {
+                chooseMeituan.addEventListener('click', () => {
+                    if (!selectedReviewId) { hideModal(); return; }
+                    deleteReviewById(selectedReviewId);
                     hideModal();
-                    return;
-                }
-                deleteReviewById(selectedReviewId);
-                hideModal();
-                jumpToMeituan();
-            });
+                    jumpToMeituan();
+                });
 
-            closeModalBtn.addEventListener('click', hideModal);
-            modalOverlay.addEventListener('click', (e) => {
-                if (e.target === modalOverlay) hideModal();
-            });
-        }
+                closeModalBtn.addEventListener('click', hideModal);
+                modalOverlay.addEventListener('click', (e) => {
+                    if (e.target === modalOverlay) hideModal();
+                });
+            }
 
-        // 初始化
-        function initPage() {
-            currentReviews = INIT_REVIEWS.map(item => ({ ...item }));
-            renderReviews();
-        }
-
-        initPage();
-    })();
-</script>
+            // 初始化
+            function initPage() {
+                currentReviews = INIT_REVIEWS.map(item => ({ ...item }));
+                renderReviews();
+            }
+            initPage();
+        })();
+    </script>
 </body>
 </html>
