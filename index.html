@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 · 一键唤起APP（微信引导修复版）</title>
+    <title>商家好评 · 好评宝）</title>
     <!-- Font Awesome 6 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- 腾讯云开发 JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
     <style>
-        /* 完整样式（与之前一致） */
+        /* 样式与之前完全一致，此处省略节省篇幅，实际使用时应保留所有样式 */
         * {
             margin: 0;
             padding: 0;
@@ -489,8 +489,8 @@
             };
 
             // ================= 初始化云开发 =================
-            // !!! 请替换成你自己的环境ID（在云开发控制台获取）!!!
-            const ENV_ID = '18ffb4c969ae9d1700cb525b3593e83f';  // 已替换为你提供的环境ID
+            // 请替换成你自己的环境ID（在云开发控制台获取）
+            const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';  // ← 你的环境ID
 
             const app = cloud.init({
                 env: ENV_ID
@@ -499,8 +499,8 @@
             const reviewsCollection = db.collection('reviews');
 
             // ================= 全局变量 =================
-            let currentReviews = [];
-            let selectedReviewId = null;
+            let currentReviews = [];        // 从数据库加载的所有文案
+            let selectedReviewId = null;    // 当前选中的文案ID
 
             // DOM 元素
             const reviewsContainer = document.getElementById('reviewsContainer');
@@ -535,57 +535,56 @@
             // 微信内处理：隐藏普通提示条，显示引导弹窗逻辑
             if (isWeChat) {
                 browserTip.style.display = 'none'; // 隐藏普通提示条
-                // 延迟显示引导弹窗（可选）
                 setTimeout(showGuide, 500);
                 
-                // 点击“我知道了”按钮隐藏引导
                 guideConfirmBtn.addEventListener('click', (e) => { 
                     e.stopPropagation(); 
                     hideGuide(); 
                 });
                 
-                // 点击遮罩层关闭引导
                 guideOverlay.addEventListener('click', (e) => { 
                     if (e.target === guideOverlay) hideGuide(); 
                 });
 
                 // 阻止所有可能导致跳转或唤起APP的操作，并显示引导
                 document.addEventListener('click', function(e) {
-                    // 如果点击的元素在引导卡片内部，且不是遮罩层，则不做处理（让按钮可以关闭）
                     if (e.target.closest('.wechat-guide-card') && !e.target.closest('#guideConfirmBtn')) {
                         return;
                     }
-                    // 如果点击的是复制按钮、APP选择按钮、联系方式等，显示引导并阻止默认
                     if (e.target.closest('.copy-btn') || e.target.closest('.app-btn') || e.target.closest('.contact-email')) {
                         e.preventDefault();
-                        e.stopPropagation(); // 阻止事件冒泡，避免触发其他监听器
+                        e.stopPropagation();
                         showGuide();
                     }
-                }, true); // 使用捕获阶段，确保优先执行
+                }, true);
             } else {
                 browserTip.style.display = 'block';
             }
 
             // ================= 核心数据库操作 =================
+            // 从云开发加载所有文案
             async function loadReviews() {
                 try {
                     const res = await reviewsCollection.get();
+                    // 将数据库中的文档转换为 { id, text } 格式
                     currentReviews = res.data.map(item => ({
                         id: item._id,
                         text: item.text
                     }));
-                    renderReviews();
+                    renderReviews(); // 随机展示5条
                 } catch (error) {
                     console.error('加载失败：', error);
                     showToast('❌ 加载文案失败，请刷新重试');
                 }
             }
 
+            // 从云开发删除指定ID的文案
             async function deleteReview(id) {
                 try {
                     await reviewsCollection.doc(id).remove();
+                    // 更新本地数组
                     currentReviews = currentReviews.filter(item => item.id !== id);
-                    renderReviews();
+                    renderReviews(); // 重新随机展示
                     checkStockAndAlert();
                     return true;
                 } catch (error) {
@@ -595,8 +594,10 @@
                 }
             }
 
+            // 从当前所有文案中随机抽取5条（不足则全部返回）
             function pickRandomFive(arr) {
-                if (arr.length <= 5) return arr.slice();
+                if (arr.length <= 5) return arr.slice(); // 不足5条，全部返回
+                // 随机打乱后取前5条
                 const shuffled = [...arr];
                 for (let i = shuffled.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -605,10 +606,11 @@
                 return shuffled.slice(0, 5);
             }
 
+            // 渲染好评列表（随机展示5条）
             function renderReviews() {
                 const listToShow = pickRandomFive(currentReviews);
                 if (listToShow.length === 0) {
-                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 暂无好评，请联系管理员添加~</div>';
+                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 所有好评已用完，请联系管理员添加~</div>';
                     return;
                 }
                 let htmlStr = '';
@@ -623,6 +625,7 @@
                 reviewsContainer.innerHTML = htmlStr;
             }
 
+            // 库存提示（当剩余数量为20、10、5时弹出）
             function checkStockAndAlert() {
                 const len = currentReviews.length;
                 if (len === 20) showToast('📢 库存剩余 20 条');
@@ -631,7 +634,7 @@
                 else if (len === 0) showToast('📢 所有好评已用完，请联系管理员补充');
             }
 
-            // ========== 唤起APP函数 ==========
+            // ========== 唤起APP函数（与之前完全一致） ==========
             function tryOpenApp(sequence, fallbackUrl, appName) {
                 let appLaunched = false;
 
@@ -758,6 +761,7 @@
                     try {
                         await navigator.clipboard.writeText(review.text);
                     } catch (e) {
+                        // 降级方案：使用 textarea 复制
                         const textarea = document.createElement('textarea');
                         textarea.value = review.text;
                         document.body.appendChild(textarea);
