@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 · 好评宝）</title>
+    <title>商家好评（错误诊断版）</title>
     <!-- Font Awesome 6 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- 腾讯云开发 JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
     <style>
-        /* 样式与之前完全一致，此处省略节省篇幅，实际使用时应保留所有样式 */
+        /* 样式与之前完全一致，此处保留必要样式 */
         * {
             margin: 0;
             padding: 0;
@@ -423,6 +423,21 @@
             transform: scale(0.96);
             background: var(--btn-hover);
         }
+
+        /* 错误提示条 */
+        .error-banner {
+            background: #ff4444;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            word-break: break-word;
+            display: none;
+        }
+        .error-banner.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -441,6 +456,7 @@
     </div>
 
     <div class="glass-container">
+        <div class="error-banner" id="errorBanner"></div>
         <div id="reviewsContainer" class="reviews-list"></div>
         <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 自动跳转商家页面</div>
         <div class="contact-footer">
@@ -492,15 +508,30 @@
             // 请替换成你自己的环境ID（在云开发控制台获取）
             const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';  // ← 你的环境ID
 
-            const app = cloud.init({
-                env: ENV_ID
-            });
-            const db = app.database();
-            const reviewsCollection = db.collection('reviews');
+            // 显示错误的元素
+            const errorBanner = document.getElementById('errorBanner');
+            function showError(msg) {
+                errorBanner.textContent = '❌ ' + msg;
+                errorBanner.classList.add('show');
+                console.error(msg);
+            }
+
+            let app, db, reviewsCollection;
+
+            try {
+                app = cloud.init({
+                    env: ENV_ID
+                });
+                db = app.database();
+                reviewsCollection = db.collection('reviews');
+            } catch (e) {
+                showError('云开发初始化失败：' + e.message);
+                // 即使初始化失败，也要继续执行微信引导等后续代码
+            }
 
             // ================= 全局变量 =================
-            let currentReviews = [];        // 从数据库加载的所有文案
-            let selectedReviewId = null;    // 当前选中的文案ID
+            let currentReviews = [];
+            let selectedReviewId = null;
 
             // DOM 元素
             const reviewsContainer = document.getElementById('reviewsContainer');
@@ -562,42 +593,65 @@
             }
 
             // ================= 核心数据库操作 =================
-            // 从云开发加载所有文案
             async function loadReviews() {
+                if (!reviewsCollection) {
+                    showError('数据库未初始化，无法加载文案');
+                    return;
+                }
                 try {
                     const res = await reviewsCollection.get();
-                    // 将数据库中的文档转换为 { id, text } 格式
                     currentReviews = res.data.map(item => ({
                         id: item._id,
                         text: item.text
                     }));
-                    renderReviews(); // 随机展示5条
+                    if (currentReviews.length === 0) {
+                        showError('数据库中暂无文案，请先导入数据');
+                    } else {
+                        errorBanner.classList.remove('show'); // 隐藏错误
+                    }
+                    renderReviews();
                 } catch (error) {
                     console.error('加载失败：', error);
-                    showToast('❌ 加载文案失败，请刷新重试');
+                    let errorMsg = '加载文案失败：';
+                    if (error.code === 'PERMISSION_DENIED') {
+                        errorMsg += '权限不足，请检查数据库自定义规则是否为 { "read": true, "write": true } 并开启未登录授权';
+                    } else if (error.message) {
+                        errorMsg += error.message;
+                    } else {
+                        errorMsg += '未知错误';
+                    }
+                    showError(errorMsg);
                 }
             }
 
-            // 从云开发删除指定ID的文案
             async function deleteReview(id) {
+                if (!reviewsCollection) {
+                    showError('数据库未初始化，无法删除');
+                    return false;
+                }
                 try {
                     await reviewsCollection.doc(id).remove();
-                    // 更新本地数组
                     currentReviews = currentReviews.filter(item => item.id !== id);
-                    renderReviews(); // 重新随机展示
+                    renderReviews();
                     checkStockAndAlert();
                     return true;
                 } catch (error) {
                     console.error('删除失败：', error);
-                    showToast('❌ 删除失败，请重试');
+                    let errorMsg = '删除失败：';
+                    if (error.code === 'PERMISSION_DENIED') {
+                        errorMsg += '权限不足，请检查数据库自定义规则是否为 { "read": true, "write": true }';
+                    } else if (error.message) {
+                        errorMsg += error.message;
+                    } else {
+                        errorMsg += '未知错误';
+                    }
+                    showError(errorMsg);
                     return false;
                 }
             }
 
-            // 从当前所有文案中随机抽取5条（不足则全部返回）
             function pickRandomFive(arr) {
-                if (arr.length <= 5) return arr.slice(); // 不足5条，全部返回
-                // 随机打乱后取前5条
+                if (arr.length <= 5) return arr.slice();
                 const shuffled = [...arr];
                 for (let i = shuffled.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -606,7 +660,6 @@
                 return shuffled.slice(0, 5);
             }
 
-            // 渲染好评列表（随机展示5条）
             function renderReviews() {
                 const listToShow = pickRandomFive(currentReviews);
                 if (listToShow.length === 0) {
@@ -625,7 +678,6 @@
                 reviewsContainer.innerHTML = htmlStr;
             }
 
-            // 库存提示（当剩余数量为20、10、5时弹出）
             function checkStockAndAlert() {
                 const len = currentReviews.length;
                 if (len === 20) showToast('📢 库存剩余 20 条');
@@ -761,7 +813,6 @@
                     try {
                         await navigator.clipboard.writeText(review.text);
                     } catch (e) {
-                        // 降级方案：使用 textarea 复制
                         const textarea = document.createElement('textarea');
                         textarea.value = review.text;
                         document.body.appendChild(textarea);
@@ -838,8 +889,12 @@
                 });
             }
 
-            // 启动：加载文案
-            loadReviews();
+            // 启动：加载文案（如果数据库初始化成功）
+            if (db && reviewsCollection) {
+                loadReviews();
+            } else {
+                showError('云开发初始化失败，无法加载数据');
+            }
         })();
     </script>
 </body>
