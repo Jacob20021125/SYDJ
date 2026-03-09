@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 · 一键唤起APP（抖音/美团）</title>
-    <!-- Font Awesome 6 图标库 (免费) -->
+    <title>商家好评 · 一键唤起APP（抖音/美团优化版）</title>
+    <!-- Font Awesome 6 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== 全局变量与重置 ========== */
+        /* 完整样式（与之前完全一致，此处省略节省篇幅，实际代码中需保留） */
         * {
             margin: 0;
             padding: 0;
@@ -465,11 +465,15 @@
 
     <script>
         (function() {
-            // ================= 商家配置（已全部配置好，直接使用）=================
+            // ================= 商家配置（优化美团唤起）=================
             const SHOP_CONFIG = {
                 meituan: {
                     name: "美团",
+                    // iOS Universal Link
                     universalLink: "https://i.meituan.com/poi/1755904985",
+                    // Android Intent (包名 com.sankuai.meituan)
+                    intent: "intent://poi/1755904985#Intent;scheme=imeituan;package=com.sankuai.meituan;end;",
+                    // 各种 Scheme
                     schemePath: "imeituan://www.meituan.com/poi/1755904985",
                     schemeShop: "imeituan://www.meituan.com/shop/1755904985",
                     schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
@@ -478,18 +482,16 @@
                 },
                 douyin: {
                     name: "抖音",
-                    // iOS Universal Link (主页)
+                    // iOS Universal Link
                     universalLink: "https://www.douyin.com/",
-                    // Android Intent (带包名，最可靠)
+                    // Android Intent
                     intent: "intent://feed#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;end;",
-                    // 通用 Scheme
                     scheme: "snssdk1128://",
-                    // 备用网页（您的抖音短链接）
                     fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
                 }
             };
 
-            // ================= 好评话库（30条完整）=================
+            // ================= 好评话库（30条）=================
             const REVIEW_TEXTS = [
                 "环境干净整洁，空气流通不闷，电脑配置高游戏流畅不卡顿，键鼠手感好，整体上网体验超棒。",
                 "网速超快，玩大型游戏毫无压力，屏幕清晰画质好，座椅舒服久坐不累，服务也很贴心周到。",
@@ -646,27 +648,21 @@
                 return false;
             }
 
-            // ========== 抖音唤起：多级智能尝试 ==========
-            function jumpToDouyin() {
-                const config = SHOP_CONFIG.douyin;
-                const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
-                if (selectedReview) {
-                    navigator.clipboard.writeText(selectedReview.text).catch(() => {});
-                }
-
+            // ========== 通用唤起函数（支持多类型） ==========
+            function tryOpenApp(sequence, fallbackUrl, appName) {
                 let appLaunched = false;
 
                 const visibilityHandler = function() {
                     if (document.hidden) {
                         appLaunched = true;
                         cleanUp();
-                        showToast('✅ 抖音APP已打开', 2000);
+                        showToast(`✅ ${appName}APP已打开`, 2000);
                     }
                 };
                 const blurHandler = function() {
                     appLaunched = true;
                     cleanUp();
-                    showToast('✅ 抖音APP已打开', 2000);
+                    showToast(`✅ ${appName}APP已打开`, 2000);
                 };
                 function cleanUp() {
                     document.removeEventListener('visibilitychange', visibilityHandler);
@@ -677,27 +673,9 @@
                 document.addEventListener('visibilitychange', visibilityHandler);
                 window.addEventListener('blur', blurHandler);
 
-                // 按平台优先级尝试
-                const trySequence = [];
-
-                if (isIOS) {
-                    trySequence.push(
-                        { type: 'universal', url: config.universalLink },
-                        { type: 'scheme', url: config.scheme }
-                    );
-                } else if (isAndroid || isHarmony) {
-                    // Android 优先使用 Intent
-                    trySequence.push(
-                        { type: 'intent', url: config.intent },
-                        { type: 'scheme', url: config.scheme }
-                    );
-                } else {
-                    trySequence.push({ type: 'scheme', url: config.scheme });
-                }
-
                 function tryNext(index) {
-                    if (appLaunched || index >= trySequence.length) return;
-                    const item = trySequence[index];
+                    if (appLaunched || index >= sequence.length) return;
+                    const item = sequence[index];
 
                     if (item.type === 'universal') {
                         const link = document.createElement('a');
@@ -707,7 +685,7 @@
                         link.click();
                         setTimeout(() => document.body.removeChild(link), 100);
                     } else if (item.type === 'intent') {
-                        // 使用 iframe 触发 intent (Android)
+                        // Android Intent 使用 iframe 触发
                         const iframe = document.createElement('iframe');
                         iframe.style.display = 'none';
                         iframe.src = item.url;
@@ -734,14 +712,40 @@
                 window._appJumpTimer = setTimeout(() => {
                     if (!appLaunched) {
                         cleanUp();
-                        if (confirm('未成功唤起抖音APP，是否前往网页版查看？')) {
-                            window.location.href = config.fallbackUrl;
+                        if (confirm(`未成功唤起${appName}APP，是否前往网页版查看？`)) {
+                            window.location.href = fallbackUrl;
                         }
                     }
                 }, 3000);
             }
 
-            // ========== 美团唤起（多级尝试 + 主页兜底） ==========
+            // ========== 抖音唤起 ==========
+            function jumpToDouyin() {
+                const config = SHOP_CONFIG.douyin;
+                const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
+                if (selectedReview) {
+                    navigator.clipboard.writeText(selectedReview.text).catch(() => {});
+                }
+
+                let sequence = [];
+                if (isIOS) {
+                    sequence = [
+                        { type: 'universal', url: config.universalLink },
+                        { type: 'scheme', url: config.scheme }
+                    ];
+                } else if (isAndroid || isHarmony) {
+                    sequence = [
+                        { type: 'intent', url: config.intent },
+                        { type: 'universal', url: config.universalLink },
+                        { type: 'scheme', url: config.scheme }
+                    ];
+                } else {
+                    sequence = [{ type: 'scheme', url: config.scheme }];
+                }
+                tryOpenApp(sequence, config.fallbackUrl, '抖音');
+            }
+
+            // ========== 美团唤起（优化版） ==========
             function jumpToMeituan() {
                 const config = SHOP_CONFIG.meituan;
                 const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
@@ -749,69 +753,33 @@
                     navigator.clipboard.writeText(selectedReview.text).catch(() => {});
                 }
 
-                let appLaunched = false;
-                const visibilityHandler = function() {
-                    if (document.hidden) {
-                        appLaunched = true;
-                        cleanUp();
-                        showToast('✅ 美团APP已打开', 2000);
-                    }
-                };
-                const blurHandler = function() {
-                    appLaunched = true;
-                    cleanUp();
-                    showToast('✅ 美团APP已打开', 2000);
-                };
-                function cleanUp() {
-                    document.removeEventListener('visibilitychange', visibilityHandler);
-                    window.removeEventListener('blur', blurHandler);
-                    if (window._appJumpTimer) clearTimeout(window._appJumpTimer);
+                let sequence = [];
+                if (isIOS) {
+                    sequence = [
+                        { type: 'universal', url: config.universalLink },
+                        { type: 'scheme', url: config.schemePath },
+                        { type: 'scheme', url: config.schemeShop },
+                        { type: 'scheme', url: config.schemeParam },
+                        { type: 'scheme', url: config.homeScheme }
+                    ];
+                } else if (isAndroid || isHarmony) {
+                    sequence = [
+                        { type: 'intent', url: config.intent },
+                        { type: 'universal', url: config.universalLink },
+                        { type: 'scheme', url: config.schemePath },
+                        { type: 'scheme', url: config.schemeShop },
+                        { type: 'scheme', url: config.schemeParam },
+                        { type: 'scheme', url: config.homeScheme }
+                    ];
+                } else {
+                    sequence = [
+                        { type: 'scheme', url: config.schemePath },
+                        { type: 'scheme', url: config.schemeShop },
+                        { type: 'scheme', url: config.schemeParam },
+                        { type: 'scheme', url: config.homeScheme }
+                    ];
                 }
-
-                document.addEventListener('visibilitychange', visibilityHandler);
-                window.addEventListener('blur', blurHandler);
-
-                const schemes = [
-                    { type: 'universal', url: config.universalLink },
-                    { type: 'scheme', url: config.schemePath },
-                    { type: 'scheme', url: config.schemeShop },
-                    { type: 'scheme', url: config.schemeParam },
-                    { type: 'scheme', url: config.homeScheme }
-                ];
-
-                function tryNext(index) {
-                    if (appLaunched || index >= schemes.length) return;
-                    const item = schemes[index];
-                    if (item.type === 'universal') {
-                        const link = document.createElement('a');
-                        link.href = item.url;
-                        link.style.display = 'none';
-                        document.body.appendChild(link);
-                        link.click();
-                        setTimeout(() => document.body.removeChild(link), 100);
-                    } else {
-                        if (isAndroid || isHarmony) {
-                            const iframe = document.createElement('iframe');
-                            iframe.style.display = 'none';
-                            iframe.src = item.url;
-                            document.body.appendChild(iframe);
-                            setTimeout(() => document.body.removeChild(iframe), 100);
-                        } else {
-                            window.location.href = item.url;
-                        }
-                    }
-                    setTimeout(() => tryNext(index + 1), 300);
-                }
-                tryNext(0);
-
-                window._appJumpTimer = setTimeout(() => {
-                    if (!appLaunched) {
-                        cleanUp();
-                        if (confirm('未成功唤起美团APP，是否前往网页版查看？')) {
-                            window.location.href = config.fallbackUrl;
-                        }
-                    }
-                }, 3000);
+                tryOpenApp(sequence, config.fallbackUrl, '美团');
             }
 
             // 模态框控制
