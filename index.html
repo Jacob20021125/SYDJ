@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 · 好评宝</title>
+    <title>商家好评 · 一键唤起APP（云开发版）</title>
     <!-- Font Awesome 6 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- 腾讯云开发 JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
     <style>
-        /* 完整样式（与之前完全一致，此处省略节省篇幅，实际代码中需保留） */
+        /* 完整样式（与之前完全一致） */
         * {
             margin: 0;
             padding: 0;
@@ -465,100 +467,40 @@
 
     <script>
         (function() {
-            // ================= 商家配置（优化美团唤起）=================
+            // ================= 商家配置（保持不变）=================
             const SHOP_CONFIG = {
                 meituan: {
                     name: "美团",
-                    // iOS Universal Link
                     universalLink: "https://i.meituan.com/poi/1755904985",
-                    // Android Intent (包名 com.sankuai.meituan)
                     intent: "intent://poi/1755904985#Intent;scheme=imeituan;package=com.sankuai.meituan;end;",
-                    // 各种 Scheme
                     schemePath: "imeituan://www.meituan.com/poi/1755904985",
                     schemeShop: "imeituan://www.meituan.com/shop/1755904985",
                     schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
                     homeScheme: "imeituan://",
-                    fallbackUrl: "http://dpurl.cn/rYQkSEfz" // 您的美团短链接
+                    fallbackUrl: "http://dpurl.cn/rYQkSEfz"
                 },
                 douyin: {
                     name: "抖音",
-                    // iOS Universal Link
                     universalLink: "https://www.douyin.com/",
-                    // Android Intent
                     intent: "intent://feed#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;end;",
                     scheme: "snssdk1128://",
                     fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
                 }
             };
 
-            // ================= 好评话库（30条）=================
-            const REVIEW_TEXTS = [
-                "环境干净整洁，空气流通不闷，电脑配置高游戏流畅不卡顿，键鼠手感好，整体上网体验超棒。",
-                "网速超快，玩大型游戏毫无压力，屏幕清晰画质好，座椅舒服久坐不累，服务也很贴心周到。",
-                "网咖环境高级又安静，卫生做得很到位，设备新反应快，和朋友开黑打游戏特别顺畅，性价比很高。",
-                "电脑配置很高，吃鸡、LOL 运行流畅，没有延迟也不卡顿，耳机音效好，整体体验非常满意。",
-                "环境舒适不嘈杂，灯光柔和不刺眼，机器干净无异味，店员态度好，在这里上网氛围超赞。",
-                "位置好找，店内整洁宽敞，设备维护得很好，游戏更新及时，网速一直很稳定，强烈推荐。",
-                "座椅超级舒服，久坐腰颈都不累，电脑反应迅速，多开程序也不卡，是休闲放松的好去处。",
-                "环境清新无烟味，卫生干净，外设手感一流，玩游戏沉浸感很强，服务热情又周到。",
-                "网咖装修时尚，氛围超棒，电脑配置高端，画面流畅，价格实惠，性价比真的绝了。",
-                "网速稳定不掉线，设备崭新好用，空间宽敞不拥挤，店员服务及时，体验感直接满分。",
-                "环境安静适合开黑，电脑性能强劲，游戏加载超快，耳机清晰，整体上网非常舒适。",
-                "卫生条件一流，桌面干净整洁，电脑不卡顿，外设好用，服务态度好，值得经常来。",
-                "店内环境舒适，空调温度适中，机器配置高，游戏体验极佳，朋友聚会开黑首选这里。",
-                "设备很新，操作流畅，屏幕高清不伤眼，网速飞快，环境安静，上网很放松。",
-                "网咖服务贴心，环境雅致，电脑运行稳定，玩游戏毫无压力，性价比超高。",
-                "空间大不压抑，空气清新，键鼠手感舒适，游戏多更新快，店员热情有礼貌。",
-                "网速给力不延迟，电脑配置高，画质清晰，环境干净安静，上网体验超预期。",
-                "环境简约大气，卫生做得好，设备反应快，玩大型游戏超顺畅，真心强烈推荐。",
-                "座椅舒适包裹性好，久坐不疲劳，电脑性能强，网速快，服务到位很满意。",
-                "店内氛围好，适合娱乐放松，机器干净好用，游戏流畅，价格合理，值得再来。",
-                "环境整洁无烟味，设备维护好，电脑不卡顿，网速稳定，服务态度超棒。",
-                "网咖配置在线，玩 3A 大作毫无压力，屏幕清晰，音效好，体验感直接拉满。",
-                "位置便利，环境舒适安静，电脑速度快，游戏齐全，服务贴心，性价比很高。",
-                "卫生干净整洁，设备崭新，操作流畅，网速超快，环境好，上网很舒服。",
-                "店内灯光柔和，环境安静不吵，电脑性能强，外设好用，服务及时又周到。",
-                "高端配置，流畅运行各种游戏，无卡顿无延迟，环境舒适，是电竞爱好者的福音。",
-                "网咖环境好，空气流通，电脑反应快，座椅舒服，服务热情，体验非常不错。",
-                "设备齐全且崭新，网速稳定，游戏加载快，环境干净安静，上网很享受。",
-                "空间宽敞，环境雅致，电脑配置高，玩游戏超爽，服务好，价格实惠。",
-                "整体体验超棒，环境干净卫生，设备流畅不卡，服务贴心，以后会常来打卡。"
-            ];
+            // ================= 初始化云开发 =================
+            // !!! 请替换成你自己的环境ID（在云开发控制台获取）!!!
+           const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';  // ← 修改这里
 
-            // 持久化库存
-            const STORAGE_KEY = 'good_reviews';
+            const app = cloud.init({
+                env: ENV_ID
+            });
+            const db = app.database();
+            const reviewsCollection = db.collection('reviews');
+
+            // ================= 全局变量 =================
             let currentReviews = [];
-
-            function loadReviewsFromStorage() {
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) {
-                    try {
-                        currentReviews = JSON.parse(stored);
-                        if (!Array.isArray(currentReviews) || currentReviews.length === 0 || !currentReviews[0].id) {
-                            throw new Error('Invalid storage');
-                        }
-                    } catch (e) {
-                        currentReviews = REVIEW_TEXTS.map((text, index) => ({ id: `r${index + 1}`, text }));
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(currentReviews));
-                    }
-                } else {
-                    currentReviews = REVIEW_TEXTS.map((text, index) => ({ id: `r${index + 1}`, text }));
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentReviews));
-                }
-            }
-            function saveReviewsToStorage() {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(currentReviews));
-            }
-            loadReviewsFromStorage();
-
             let selectedReviewId = null;
-
-            // 环境检测
-            const ua = navigator.userAgent.toLowerCase();
-            const isWeChat = ua.indexOf('micromessenger') !== -1;
-            const isIOS = /iphone|ipad|ipod/.test(ua);
-            const isAndroid = /android/.test(ua);
-            const isHarmony = ua.indexOf('harmony') !== -1;
 
             // DOM 元素
             const reviewsContainer = document.getElementById('reviewsContainer');
@@ -571,6 +513,7 @@
             const guideOverlay = document.getElementById('wechatGuideOverlay');
             const guideConfirmBtn = document.getElementById('guideConfirmBtn');
 
+            // ================= 工具函数 =================
             function showToast(msg, duration = 3000) {
                 toastMessage.style.display = 'block';
                 toastMessage.textContent = msg;
@@ -582,7 +525,13 @@
             function showGuide() { guideOverlay.classList.add('show'); }
             function hideGuide() { guideOverlay.classList.remove('show'); }
 
-            // 微信环境
+            // 环境检测
+            const ua = navigator.userAgent.toLowerCase();
+            const isWeChat = ua.indexOf('micromessenger') !== -1;
+            const isIOS = /iphone|ipad|ipod/.test(ua);
+            const isAndroid = /android/.test(ua);
+            const isHarmony = ua.indexOf('harmony') !== -1;
+
             if (isWeChat) {
                 browserTip.style.display = 'none';
                 setTimeout(showGuide, 300);
@@ -600,7 +549,39 @@
                 browserTip.style.display = 'block';
             }
 
-            // 好评渲染
+            // ================= 核心数据库操作 =================
+            // 从云开发加载文案
+            async function loadReviews() {
+                try {
+                    const res = await reviewsCollection.get();
+                    currentReviews = res.data.map(item => ({
+                        id: item._id,  // 使用云开发自动生成的 ID
+                        text: item.text
+                    }));
+                    renderReviews();
+                } catch (error) {
+                    console.error('加载失败：', error);
+                    showToast('❌ 加载文案失败，请刷新重试');
+                }
+            }
+
+            // 从云开发删除文案
+            async function deleteReview(id) {
+                try {
+                    await reviewsCollection.doc(id).remove();
+                    // 更新本地数组
+                    currentReviews = currentReviews.filter(item => item.id !== id);
+                    renderReviews();
+                    checkStockAndAlert();
+                    return true;
+                } catch (error) {
+                    console.error('删除失败：', error);
+                    showToast('❌ 删除失败，请重试');
+                    return false;
+                }
+            }
+
+            // 随机选取5条展示
             function pickRandomFive(arr) {
                 if (arr.length <= 5) return arr.slice();
                 const shuffled = [...arr];
@@ -611,10 +592,11 @@
                 return shuffled.slice(0, 5);
             }
 
+            // 渲染好评列表
             function renderReviews() {
                 const listToShow = pickRandomFive(currentReviews);
                 if (listToShow.length === 0) {
-                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 暂时没有好评了，刷新页面恢复~</div>';
+                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 暂无好评，请联系管理员添加~</div>';
                     return;
                 }
                 let htmlStr = '';
@@ -629,26 +611,16 @@
                 reviewsContainer.innerHTML = htmlStr;
             }
 
+            // 库存提示
             function checkStockAndAlert() {
                 const len = currentReviews.length;
                 if (len === 20) showToast('📢 库存剩余 20 条');
                 else if (len === 10) showToast('📢 库存剩余 10 条');
                 else if (len === 5) showToast('📢 库存只剩 5 条啦！');
+                else if (len === 0) showToast('📢 所有好评已用完，请联系管理员补充');
             }
 
-            function deleteReviewById(id) {
-                const beforeLength = currentReviews.length;
-                currentReviews = currentReviews.filter(item => item.id !== id);
-                if (beforeLength !== currentReviews.length) {
-                    saveReviewsToStorage();
-                    renderReviews();
-                    checkStockAndAlert();
-                    return true;
-                }
-                return false;
-            }
-
-            // ========== 通用唤起函数（支持多类型） ==========
+            // ========== 唤起APP函数（与之前完全一致） ==========
             function tryOpenApp(sequence, fallbackUrl, appName) {
                 let appLaunched = false;
 
@@ -685,14 +657,12 @@
                         link.click();
                         setTimeout(() => document.body.removeChild(link), 100);
                     } else if (item.type === 'intent') {
-                        // Android Intent 使用 iframe 触发
                         const iframe = document.createElement('iframe');
                         iframe.style.display = 'none';
                         iframe.src = item.url;
                         document.body.appendChild(iframe);
                         setTimeout(() => document.body.removeChild(iframe), 100);
                     } else {
-                        // scheme
                         if (isAndroid || isHarmony) {
                             const iframe = document.createElement('iframe');
                             iframe.style.display = 'none';
@@ -719,14 +689,8 @@
                 }, 3000);
             }
 
-            // ========== 抖音唤起 ==========
             function jumpToDouyin() {
                 const config = SHOP_CONFIG.douyin;
-                const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
-                if (selectedReview) {
-                    navigator.clipboard.writeText(selectedReview.text).catch(() => {});
-                }
-
                 let sequence = [];
                 if (isIOS) {
                     sequence = [
@@ -745,14 +709,8 @@
                 tryOpenApp(sequence, config.fallbackUrl, '抖音');
             }
 
-            // ========== 美团唤起（优化版） ==========
             function jumpToMeituan() {
                 const config = SHOP_CONFIG.meituan;
-                const selectedReview = currentReviews.find(item => item.id === selectedReviewId);
-                if (selectedReview) {
-                    navigator.clipboard.writeText(selectedReview.text).catch(() => {});
-                }
-
                 let sequence = [];
                 if (isIOS) {
                     sequence = [
@@ -782,6 +740,34 @@
                 tryOpenApp(sequence, config.fallbackUrl, '美团');
             }
 
+            // ========== 处理用户复制并删除 ==========
+            async function handleReviewUsed(id, platform) {
+                const review = currentReviews.find(item => item.id === id);
+                if (review) {
+                    try {
+                        await navigator.clipboard.writeText(review.text);
+                    } catch (e) {
+                        // 降级方案：使用 textarea 复制
+                        const textarea = document.createElement('textarea');
+                        textarea.value = review.text;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                    }
+                }
+                
+                const deleted = await deleteReview(id);
+                if (deleted) {
+                    hideModal();
+                    if (platform === 'douyin') {
+                        jumpToDouyin();
+                    } else {
+                        jumpToMeituan();
+                    }
+                }
+            }
+
             // 模态框控制
             function hideModal() {
                 modalOverlay.classList.remove('show');
@@ -792,7 +778,7 @@
                 modalOverlay.classList.add('show');
             }
 
-            // 事件绑定（非微信）
+            // 事件绑定
             if (!isWeChat) {
                 reviewsContainer.addEventListener('click', (e) => {
                     const copyBtn = e.target.closest('.copy-btn');
@@ -803,16 +789,12 @@
 
                 chooseDouyin.addEventListener('click', () => {
                     if (!selectedReviewId) { hideModal(); return; }
-                    deleteReviewById(selectedReviewId);
-                    hideModal();
-                    jumpToDouyin();
+                    handleReviewUsed(selectedReviewId, 'douyin');
                 });
 
                 chooseMeituan.addEventListener('click', () => {
                     if (!selectedReviewId) { hideModal(); return; }
-                    deleteReviewById(selectedReviewId);
-                    hideModal();
-                    jumpToMeituan();
+                    handleReviewUsed(selectedReviewId, 'meituan');
                 });
 
                 closeModalBtn.addEventListener('click', hideModal);
@@ -821,10 +803,9 @@
                 });
             }
 
-            // 初始化
-            renderReviews();
+            // 启动：加载文案
+            loadReviews();
         })();
     </script>
 </body>
 </html>
-
