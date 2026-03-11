@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评（错误诊断版）</title>
+    <title>商家好评 · 动态集合版（默认CS1）</title>
     <!-- Font Awesome 6 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- 腾讯云开发 JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.14.0/lib/cloudbase.min.js"></script>
+    <!-- 腾讯云 Cloudbase SDK -->
+    <script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.12.0/cloudbase.full.min.js"></script>
     <style>
-        /* 样式与之前完全一致，此处保留必要样式 */
+        /* ====== 完整样式 ====== */
         * {
             margin: 0;
             padding: 0;
@@ -31,6 +31,7 @@
             --guide-border: rgba(0, 0, 0, 0.2);
             --guide-btn-bg: #2c3e50;
             --guide-btn-text: #ffffff;
+            --hint-bg: rgba(200, 200, 200, 0.3);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -48,6 +49,7 @@
                 --guide-border: rgba(255, 255, 255, 0.2);
                 --guide-btn-bg: #cccccc;
                 --guide-btn-text: #121212;
+                --hint-bg: rgba(60, 60, 60, 0.5);
             }
         }
 
@@ -179,6 +181,22 @@
             color: var(--text-primary);
             box-shadow: 0 2px 6px var(--shadow-color);
             text-decoration: none;
+        }
+
+        /* 集合切换提示 */
+        .collection-hint {
+            background: var(--hint-bg);
+            backdrop-filter: blur(4px);
+            border-radius: 20px;
+            padding: 6px 12px;
+            margin: 0 0 10px 0;
+            font-size: 0.75rem;
+            text-align: center;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
+            display: inline-block;
+            width: auto;
+            max-width: 100%;
         }
 
         /* 选择APP模态框 */
@@ -423,21 +441,6 @@
             transform: scale(0.96);
             background: var(--btn-hover);
         }
-
-        /* 错误提示条 */
-        .error-banner {
-            background: #ff4444;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 14px;
-            word-break: break-word;
-            display: none;
-        }
-        .error-banner.show {
-            display: block;
-        }
     </style>
 </head>
 <body>
@@ -456,7 +459,12 @@
     </div>
 
     <div class="glass-container">
-        <div class="error-banner" id="errorBanner"></div>
+        <!-- 集合切换提示 - 新增 -->
+        <div class="collection-hint" id="collectionHint">
+            当前集合：<span id="currentCollection">CS1</span> 
+            （如需使用其他集合，请在网址后添加 <code>?collection=集合名</code>）
+        </div>
+
         <div id="reviewsContainer" class="reviews-list"></div>
         <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 自动跳转商家页面</div>
         <div class="contact-footer">
@@ -483,55 +491,44 @@
 
     <script>
         (function() {
-            // ================= 商家配置 =================
-            const SHOP_CONFIG = {
-                meituan: {
-                    name: "美团",
-                    universalLink: "https://i.meituan.com/poi/1755904985",
-                    intent: "intent://poi/1755904985#Intent;scheme=imeituan;package=com.sankuai.meituan;end;",
-                    schemePath: "imeituan://www.meituan.com/poi/1755904985",
-                    schemeShop: "imeituan://www.meituan.com/shop/1755904985",
-                    schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
-                    homeScheme: "imeituan://",
-                    fallbackUrl: "http://dpurl.cn/rYQkSEfz"
-                },
-                douyin: {
-                    name: "抖音",
-                    universalLink: "https://www.douyin.com/",
-                    intent: "intent://feed#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;end;",
-                    scheme: "snssdk1128://",
-                    fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
-                }
-            };
+            // ================= 腾讯云 Cloudbase 配置 =================
+            const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';  // 固定环境ID
 
-            // ================= 初始化云开发 =================
-            // 请替换成你自己的环境ID（在云开发控制台获取）
-            const ENV_ID = 'good-reviews-3g35hh0i28b88e1b';  // ← 你的环境ID
+            // ========== 如何添加新集合？ ==========
+            // 本代码已支持通过 URL 参数动态切换集合，无需修改代码。
+            // 您只需要在腾讯云控制台创建新的集合（例如 CS2, CS3...），
+            // 并确保集合权限允许匿名用户读写。
+            // 然后通过以下格式访问：
+            //   https://您的域名.com/?collection=新集合名
+            // 例如：https://yourpage.com/?collection=CS2
+            // 如果不指定 collection 参数，默认使用下方 DEFAULT_COLLECTION 的值。
+            // 当前默认集合为 'CS1'，您可以根据需要修改 DEFAULT_COLLECTION。
+            // ====================================
 
-            // 显示错误的元素
-            const errorBanner = document.getElementById('errorBanner');
-            function showError(msg) {
-                errorBanner.textContent = '❌ ' + msg;
-                errorBanner.classList.add('show');
-                console.error(msg);
-            }
+            const DEFAULT_COLLECTION = 'CS1';  // 默认集合名称，可在此修改默认值
 
-            let app, db, reviewsCollection;
+            // 从URL参数获取集合名称，若未指定则使用 DEFAULT_COLLECTION
+            const urlParams = new URLSearchParams(window.location.search);
+            const COLLECTION_NAME = urlParams.get('collection') || DEFAULT_COLLECTION;
+            
+            console.log(`当前使用的集合: ${COLLECTION_NAME}`);
 
-            try {
-                app = cloud.init({
-                    env: ENV_ID
-                });
-                db = app.database();
-                reviewsCollection = db.collection('reviews');
-            } catch (e) {
-                showError('云开发初始化失败：' + e.message);
-                // 即使初始化失败，也要继续执行微信引导等后续代码
-            }
+            // 更新页面上的提示文本
+            document.getElementById('currentCollection').textContent = COLLECTION_NAME;
 
             // ================= 全局变量 =================
-            let currentReviews = [];
-            let selectedReviewId = null;
+            let currentReviews = [];                // 存放从云数据库拉取的所有好评 {id, text}
+            let selectedReviewId = null;            // 当前点击复制的好评id
+            let db = null;                           // 云数据库引用
+            let collection = null;                    // 集合引用
+            let isCloudReady = false;                  // 标记云数据库是否初始化完成
+
+            // 环境检测
+            const ua = navigator.userAgent.toLowerCase();
+            const isWeChat = ua.indexOf('micromessenger') !== -1;
+            const isIOS = /iphone|ipad|ipod/.test(ua);
+            const isAndroid = /android/.test(ua);
+            const isHarmony = ua.indexOf('harmony') !== -1;
 
             // DOM 元素
             const reviewsContainer = document.getElementById('reviewsContainer');
@@ -544,7 +541,7 @@
             const guideOverlay = document.getElementById('wechatGuideOverlay');
             const guideConfirmBtn = document.getElementById('guideConfirmBtn');
 
-            // ================= 工具函数 =================
+            // ================= 通用工具 =================
             function showToast(msg, duration = 3000) {
                 toastMessage.style.display = 'block';
                 toastMessage.textContent = msg;
@@ -556,35 +553,17 @@
             function showGuide() { guideOverlay.classList.add('show'); }
             function hideGuide() { guideOverlay.classList.remove('show'); }
 
-            // 环境检测
-            const ua = navigator.userAgent.toLowerCase();
-            const isWeChat = ua.indexOf('micromessenger') !== -1;
-            const isIOS = /iphone|ipad|ipod/.test(ua);
-            const isAndroid = /android/.test(ua);
-            const isHarmony = ua.indexOf('harmony') !== -1;
-
-            // 微信内处理：隐藏普通提示条，显示引导弹窗逻辑
+            // 微信环境处理
             if (isWeChat) {
-                browserTip.style.display = 'none'; // 隐藏普通提示条
-                setTimeout(showGuide, 500);
-                
-                guideConfirmBtn.addEventListener('click', (e) => { 
-                    e.stopPropagation(); 
-                    hideGuide(); 
-                });
-                
-                guideOverlay.addEventListener('click', (e) => { 
-                    if (e.target === guideOverlay) hideGuide(); 
-                });
-
-                // 阻止所有可能导致跳转或唤起APP的操作，并显示引导
+                browserTip.style.display = 'none';
+                setTimeout(showGuide, 300);
+                guideConfirmBtn.addEventListener('click', (e) => { e.stopPropagation(); hideGuide(); });
+                guideOverlay.addEventListener('click', (e) => { if (e.target === guideOverlay) hideGuide(); });
                 document.addEventListener('click', function(e) {
-                    if (e.target.closest('.wechat-guide-card') && !e.target.closest('#guideConfirmBtn')) {
-                        return;
-                    }
+                    if (e.target.closest('.wechat-guide-card')) return;
+                    if (e.target === guideOverlay) return;
                     if (e.target.closest('.copy-btn') || e.target.closest('.app-btn') || e.target.closest('.contact-email')) {
                         e.preventDefault();
-                        e.stopPropagation();
                         showGuide();
                     }
                 }, true);
@@ -592,80 +571,82 @@
                 browserTip.style.display = 'block';
             }
 
-            // ================= 核心数据库操作 =================
-            async function loadReviews() {
-                if (!reviewsCollection) {
-                    showError('数据库未初始化，无法加载文案');
-                    return;
-                }
+            // ================= 腾讯云初始化 =================
+            async function initCloud() {
                 try {
-                    const res = await reviewsCollection.get();
-                    currentReviews = res.data.map(item => ({
-                        id: item._id,
-                        text: item.text
+                    const app = cloudbase.init({
+                        env: CLOUD_ENV
+                    });
+                    // 匿名登录
+                    await app.auth().signInAnonymously();
+                    db = app.database();
+                    collection = db.collection(COLLECTION_NAME);
+                    isCloudReady = true;
+                    console.log(`✅ 云数据库初始化成功，集合: ${COLLECTION_NAME}`);
+                } catch (err) {
+                    console.error('❌ 云数据库初始化失败', err);
+                    showToast('数据库连接失败，请稍后重试', 4000);
+                }
+            }
+
+            // ================= 云数据库操作 =================
+            // 从云数据库拉取所有好评 (返回数组 [{id, text}])
+            async function fetchAllReviews() {
+                if (!isCloudReady) return [];
+                try {
+                    const res = await collection.get();
+                    const docs = res.data || [];
+                    return docs.map(doc => ({
+                        id: doc._id,
+                        text: doc.text
                     }));
-                    if (currentReviews.length === 0) {
-                        showError('数据库中暂无文案，请先导入数据');
-                    } else {
-                        errorBanner.classList.remove('show'); // 隐藏错误
-                    }
-                    renderReviews();
-                } catch (error) {
-                    console.error('加载失败：', error);
-                    let errorMsg = '加载文案失败：';
-                    if (error.code === 'PERMISSION_DENIED') {
-                        errorMsg += '权限不足，请检查数据库自定义规则是否为 { "read": true, "write": true } 并开启未登录授权';
-                    } else if (error.message) {
-                        errorMsg += error.message;
-                    } else {
-                        errorMsg += '未知错误';
-                    }
-                    showError(errorMsg);
+                } catch (err) {
+                    console.error('拉取数据失败', err);
+                    showToast('数据拉取失败', 2000);
+                    return [];
                 }
             }
 
-            async function deleteReview(id) {
-                if (!reviewsCollection) {
-                    showError('数据库未初始化，无法删除');
-                    return false;
-                }
+            // 根据id删除云数据库中的好评
+            async function deleteReviewById(id) {
+                if (!isCloudReady || !id) return false;
                 try {
-                    await reviewsCollection.doc(id).remove();
-                    currentReviews = currentReviews.filter(item => item.id !== id);
-                    renderReviews();
-                    checkStockAndAlert();
+                    await collection.doc(id).remove();
                     return true;
-                } catch (error) {
-                    console.error('删除失败：', error);
-                    let errorMsg = '删除失败：';
-                    if (error.code === 'PERMISSION_DENIED') {
-                        errorMsg += '权限不足，请检查数据库自定义规则是否为 { "read": true, "write": true }';
-                    } else if (error.message) {
-                        errorMsg += error.message;
-                    } else {
-                        errorMsg += '未知错误';
-                    }
-                    showError(errorMsg);
+                } catch (err) {
+                    console.error('删除失败', err);
+                    showToast('删除失败，网络或权限问题', 2000);
                     return false;
                 }
             }
 
-            function pickRandomFive(arr) {
-                if (arr.length <= 5) return arr.slice();
-                const shuffled = [...arr];
-                for (let i = shuffled.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-                }
-                return shuffled.slice(0, 5);
-            }
-
-            function renderReviews() {
-                const listToShow = pickRandomFive(currentReviews);
-                if (listToShow.length === 0) {
-                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 所有好评已用完，请联系管理员添加~</div>';
+            // ================= 渲染界面：不足5条全显示，超过5条随机展示5条 =================
+            async function renderReviews() {
+                if (!isCloudReady) {
+                    reviewsContainer.innerHTML = '<div class="empty-message">⏳ 加载好评库中...</div>';
                     return;
                 }
+                const allReviews = await fetchAllReviews();
+                currentReviews = allReviews;
+
+                if (currentReviews.length === 0) {
+                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 所有好评已被用完，请联系管理员重置~</div>';
+                    return;
+                }
+
+                // 决定要显示的列表
+                let listToShow;
+                if (currentReviews.length <= 5) {
+                    listToShow = currentReviews;
+                } else {
+                    const shuffled = [...currentReviews];
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                    }
+                    listToShow = shuffled.slice(0, 5);
+                }
+
                 let htmlStr = '';
                 listToShow.forEach(item => {
                     htmlStr += `
@@ -676,17 +657,15 @@
                     `;
                 });
                 reviewsContainer.innerHTML = htmlStr;
-            }
 
-            function checkStockAndAlert() {
+                // 库存预警
                 const len = currentReviews.length;
                 if (len === 20) showToast('📢 库存剩余 20 条');
                 else if (len === 10) showToast('📢 库存剩余 10 条');
                 else if (len === 5) showToast('📢 库存只剩 5 条啦！');
-                else if (len === 0) showToast('📢 所有好评已用完，请联系管理员补充');
             }
 
-            // ========== 唤起APP函数（与之前完全一致） ==========
+            // ================= 唤起APP函数 =================
             function tryOpenApp(sequence, fallbackUrl, appName) {
                 let appLaunched = false;
 
@@ -755,6 +734,7 @@
                 }, 3000);
             }
 
+            // 抖音唤起
             function jumpToDouyin() {
                 const config = SHOP_CONFIG.douyin;
                 let sequence = [];
@@ -775,6 +755,7 @@
                 tryOpenApp(sequence, config.fallbackUrl, '抖音');
             }
 
+            // 美团唤起
             function jumpToMeituan() {
                 const config = SHOP_CONFIG.meituan;
                 let sequence = [];
@@ -806,34 +787,28 @@
                 tryOpenApp(sequence, config.fallbackUrl, '美团');
             }
 
-            // ========== 处理用户复制并删除 ==========
-            async function handleReviewUsed(id, platform) {
-                const review = currentReviews.find(item => item.id === id);
-                if (review) {
-                    try {
-                        await navigator.clipboard.writeText(review.text);
-                    } catch (e) {
-                        const textarea = document.createElement('textarea');
-                        textarea.value = review.text;
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textarea);
-                    }
+            // ================= 商家配置 =================
+            const SHOP_CONFIG = {
+                meituan: {
+                    name: "美团",
+                    universalLink: "https://i.meituan.com/poi/1755904985",
+                    intent: "intent://poi/1755904985#Intent;scheme=imeituan;package=com.sankuai.meituan;end;",
+                    schemePath: "imeituan://www.meituan.com/poi/1755904985",
+                    schemeShop: "imeituan://www.meituan.com/shop/1755904985",
+                    schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
+                    homeScheme: "imeituan://",
+                    fallbackUrl: "http://dpurl.cn/rYQkSEfz"
+                },
+                douyin: {
+                    name: "抖音",
+                    universalLink: "https://www.douyin.com/",
+                    intent: "intent://feed#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;end;",
+                    scheme: "snssdk1128://",
+                    fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
                 }
-                
-                const deleted = await deleteReview(id);
-                if (deleted) {
-                    hideModal();
-                    if (platform === 'douyin') {
-                        jumpToDouyin();
-                    } else {
-                        jumpToMeituan();
-                    }
-                }
-            }
+            };
 
-            // 模态框控制
+            // ================= 模态框控制 =================
             function hideModal() {
                 modalOverlay.classList.remove('show');
                 selectedReviewId = null;
@@ -843,9 +818,8 @@
                 modalOverlay.classList.add('show');
             }
 
-            // 事件绑定（非微信环境才绑定正常的交互）
+            // ================= 事件绑定（非微信下启用）=================
             if (!isWeChat) {
-                // 点击复制按钮显示模态框
                 reviewsContainer.addEventListener('click', (e) => {
                     const copyBtn = e.target.closest('.copy-btn');
                     if (!copyBtn) return;
@@ -853,48 +827,52 @@
                     if (id) showModal(id);
                 });
 
-                // 选择抖音
-                chooseDouyin.addEventListener('click', () => {
+                chooseDouyin.addEventListener('click', async () => {
                     if (!selectedReviewId) { hideModal(); return; }
-                    handleReviewUsed(selectedReviewId, 'douyin');
+                    const review = currentReviews.find(r => r.id === selectedReviewId);
+                    if (review) {
+                        navigator.clipboard.writeText(review.text).catch(() => {});
+                    }
+                    const deleteSuccess = await deleteReviewById(selectedReviewId);
+                    if (!deleteSuccess) {
+                        showToast('⚠️ 云删除失败，但文本已复制', 2000);
+                    }
+                    hideModal();
+                    await renderReviews();
+                    jumpToDouyin();
                 });
 
-                // 选择美团
-                chooseMeituan.addEventListener('click', () => {
+                chooseMeituan.addEventListener('click', async () => {
                     if (!selectedReviewId) { hideModal(); return; }
-                    handleReviewUsed(selectedReviewId, 'meituan');
+                    const review = currentReviews.find(r => r.id === selectedReviewId);
+                    if (review) {
+                        navigator.clipboard.writeText(review.text).catch(() => {});
+                    }
+                    const deleteSuccess = await deleteReviewById(selectedReviewId);
+                    if (!deleteSuccess) {
+                        showToast('⚠️ 云删除失败，但文本已复制', 2000);
+                    }
+                    hideModal();
+                    await renderReviews();
+                    jumpToMeituan();
                 });
 
                 closeModalBtn.addEventListener('click', hideModal);
                 modalOverlay.addEventListener('click', (e) => {
                     if (e.target === modalOverlay) hideModal();
                 });
-            } else {
-                // 微信环境下，点击复制按钮只显示引导（已在全局捕获中处理，但为防止万一，这里再显式处理）
-                reviewsContainer.addEventListener('click', (e) => {
-                    const copyBtn = e.target.closest('.copy-btn');
-                    if (copyBtn) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        showGuide();
-                    }
-                });
-                // 同样处理APP选择按钮
-                [chooseDouyin, chooseMeituan].forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        showGuide();
-                    });
-                });
             }
 
-            // 启动：加载文案（如果数据库初始化成功）
-            if (db && reviewsCollection) {
-                loadReviews();
-            } else {
-                showError('云开发初始化失败，无法加载数据');
-            }
+            // ================= 启动一切 =================
+            (async function bootstrap() {
+                await initCloud();
+                if (isCloudReady) {
+                    await renderReviews();
+                } else {
+                    reviewsContainer.innerHTML = '<div class="empty-message">❌ 数据库初始化失败，请检查网络或环境配置</div>';
+                }
+            })();
+
         })();
     </script>
 </body>
