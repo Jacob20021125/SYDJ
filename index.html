@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 · 动态集合版（默认CS1）</title>
+    <title>商家好评 · 极速版（默认CS1）</title>
     <!-- Font Awesome 6 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- 腾讯云 Cloudbase SDK -->
     <script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.12.0/cloudbase.full.min.js"></script>
     <style>
-        /* ====== 完整样式 ====== */
+        /* ====== 完整样式（无改动）====== */
         * {
             margin: 0;
             padding: 0;
@@ -31,7 +31,7 @@
             --guide-border: rgba(0, 0, 0, 0.2);
             --guide-btn-bg: #2c3e50;
             --guide-btn-text: #ffffff;
-            --hint-bg: rgba(200, 200, 200, 0.3);
+            --error-bg: rgba(255, 100, 100, 0.2);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -49,7 +49,7 @@
                 --guide-border: rgba(255, 255, 255, 0.2);
                 --guide-btn-bg: #cccccc;
                 --guide-btn-text: #121212;
-                --hint-bg: rgba(60, 60, 60, 0.5);
+                --error-bg: rgba(180, 60, 60, 0.4);
             }
         }
 
@@ -80,6 +80,7 @@
             flex-direction: column;
             gap: 16px;
             margin-bottom: 24px;
+            min-height: 280px; /* 防止加载抖动 */
         }
 
         .review-card {
@@ -181,22 +182,6 @@
             color: var(--text-primary);
             box-shadow: 0 2px 6px var(--shadow-color);
             text-decoration: none;
-        }
-
-        /* 集合切换提示 */
-        .collection-hint {
-            background: var(--hint-bg);
-            backdrop-filter: blur(4px);
-            border-radius: 20px;
-            padding: 6px 12px;
-            margin: 0 0 10px 0;
-            font-size: 0.75rem;
-            text-align: center;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-light);
-            display: inline-block;
-            width: auto;
-            max-width: 100%;
         }
 
         /* 选择APP模态框 */
@@ -310,6 +295,18 @@
             color: var(--text-secondary);
             font-style: italic;
             font-size: 1.2rem;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: #ff6b6b;
+            background: var(--error-bg);
+            border-radius: 24px;
+            margin: 20px 0;
+            font-size: 1rem;
+            backdrop-filter: blur(4px);
+            border: 1px solid var(--border-light);
         }
 
         .toast-message {
@@ -441,6 +438,24 @@
             transform: scale(0.96);
             background: var(--btn-hover);
         }
+
+        /* 加载动画 */
+        .loading-skeleton {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .skeleton-card {
+            background: var(--btn-bg);
+            border-radius: 28px;
+            height: 80px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
     </style>
 </head>
 <body>
@@ -459,13 +474,16 @@
     </div>
 
     <div class="glass-container">
-        <!-- 集合切换提示 - 新增 -->
-        <div class="collection-hint" id="collectionHint">
-            当前集合：<span id="currentCollection">CS1</span> 
-            （如需使用其他集合，请在网址后添加 <code>?collection=集合名</code>）
+        <div id="reviewsContainer" class="reviews-list">
+            <!-- 骨架屏，初始显示加载动画 -->
+            <div class="loading-skeleton" id="loadingSkeleton">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
         </div>
-
-        <div id="reviewsContainer" class="reviews-list"></div>
         <div class="browser-tip" id="browserTip">✨ 点击复制 → 选择APP → 自动跳转商家页面</div>
         <div class="contact-footer">
             <span>📬 商务合作 · 好评宝</span>
@@ -494,18 +512,8 @@
             // ================= 腾讯云 Cloudbase 配置 =================
             const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';  // 固定环境ID
 
-            // ========== 如何添加新集合？ ==========
-            // 本代码已支持通过 URL 参数动态切换集合，无需修改代码。
-            // 您只需要在腾讯云控制台创建新的集合（例如 CS2, CS3...），
-            // 并确保集合权限允许匿名用户读写。
-            // 然后通过以下格式访问：
-            //   https://您的域名.com/?collection=新集合名
-            // 例如：https://yourpage.com/?collection=CS2
-            // 如果不指定 collection 参数，默认使用下方 DEFAULT_COLLECTION 的值。
-            // 当前默认集合为 'CS1'，您可以根据需要修改 DEFAULT_COLLECTION。
-            // ====================================
-
-            const DEFAULT_COLLECTION = 'CS1';  // 默认集合名称，可在此修改默认值
+            // 默认集合名称（可在此修改）
+            const DEFAULT_COLLECTION = 'CS1';
 
             // 从URL参数获取集合名称，若未指定则使用 DEFAULT_COLLECTION
             const urlParams = new URLSearchParams(window.location.search);
@@ -513,15 +521,17 @@
             
             console.log(`当前使用的集合: ${COLLECTION_NAME}`);
 
-            // 更新页面上的提示文本
-            document.getElementById('currentCollection').textContent = COLLECTION_NAME;
+            // 缓存key
+            const CACHE_KEY = `reviews_cache_${COLLECTION_NAME}`;
+            const CACHE_EXPIRE = 5 * 60 * 1000; // 5分钟有效期
 
             // ================= 全局变量 =================
-            let currentReviews = [];                // 存放从云数据库拉取的所有好评 {id, text}
+            let currentReviews = [];                // 存放当前显示的好评（用于删除时查找）
             let selectedReviewId = null;            // 当前点击复制的好评id
             let db = null;                           // 云数据库引用
             let collection = null;                    // 集合引用
             let isCloudReady = false;                  // 标记云数据库是否初始化完成
+            let cloudInitError = null;                  // 初始化错误信息
 
             // 环境检测
             const ua = navigator.userAgent.toLowerCase();
@@ -532,6 +542,7 @@
 
             // DOM 元素
             const reviewsContainer = document.getElementById('reviewsContainer');
+            const loadingSkeleton = document.getElementById('loadingSkeleton');
             const modalOverlay = document.getElementById('appChoiceModal');
             const closeModalBtn = document.getElementById('closeModal');
             const chooseDouyin = document.getElementById('chooseDouyin');
@@ -571,6 +582,36 @@
                 browserTip.style.display = 'block';
             }
 
+            // ================= 缓存操作 =================
+            function getCachedReviews() {
+                try {
+                    const cached = localStorage.getItem(CACHE_KEY);
+                    if (!cached) return null;
+                    const data = JSON.parse(cached);
+                    if (Date.now() - data.timestamp > CACHE_EXPIRE) {
+                        localStorage.removeItem(CACHE_KEY);
+                        return null;
+                    }
+                    return data.reviews;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function setCachedReviews(reviews) {
+                try {
+                    const cacheData = {
+                        reviews: reviews,
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+                } catch (e) {}
+            }
+
+            function clearCache() {
+                localStorage.removeItem(CACHE_KEY);
+            }
+
             // ================= 腾讯云初始化 =================
             async function initCloud() {
                 try {
@@ -585,12 +626,12 @@
                     console.log(`✅ 云数据库初始化成功，集合: ${COLLECTION_NAME}`);
                 } catch (err) {
                     console.error('❌ 云数据库初始化失败', err);
-                    showToast('数据库连接失败，请稍后重试', 4000);
+                    cloudInitError = err.message || '请检查环境ID或匿名登录是否开启';
+                    isCloudReady = false;
                 }
             }
 
             // ================= 云数据库操作 =================
-            // 从云数据库拉取所有好评 (返回数组 [{id, text}])
             async function fetchAllReviews() {
                 if (!isCloudReady) return [];
                 try {
@@ -602,44 +643,38 @@
                     }));
                 } catch (err) {
                     console.error('拉取数据失败', err);
-                    showToast('数据拉取失败', 2000);
+                    showToast('数据拉取失败: ' + (err.message || ''), 3000);
                     return [];
                 }
             }
 
-            // 根据id删除云数据库中的好评
             async function deleteReviewById(id) {
                 if (!isCloudReady || !id) return false;
                 try {
                     await collection.doc(id).remove();
+                    // 删除成功后清除缓存，下次渲染将重新拉取
+                    clearCache();
                     return true;
                 } catch (err) {
                     console.error('删除失败', err);
-                    showToast('删除失败，网络或权限问题', 2000);
+                    showToast('删除失败：' + (err.message || ''), 2000);
                     return false;
                 }
             }
 
-            // ================= 渲染界面：不足5条全显示，超过5条随机展示5条 =================
-            async function renderReviews() {
-                if (!isCloudReady) {
-                    reviewsContainer.innerHTML = '<div class="empty-message">⏳ 加载好评库中...</div>';
-                    return;
-                }
-                const allReviews = await fetchAllReviews();
-                currentReviews = allReviews;
-
-                if (currentReviews.length === 0) {
+            // ================= 渲染界面 =================
+            function renderReviewsFromData(reviews) {
+                if (!reviews || reviews.length === 0) {
                     reviewsContainer.innerHTML = '<div class="empty-message">✨ 所有好评已被用完，请联系管理员重置~</div>';
                     return;
                 }
 
                 // 决定要显示的列表
                 let listToShow;
-                if (currentReviews.length <= 5) {
-                    listToShow = currentReviews;
+                if (reviews.length <= 5) {
+                    listToShow = reviews;
                 } else {
-                    const shuffled = [...currentReviews];
+                    const shuffled = [...reviews];
                     for (let i = shuffled.length - 1; i > 0; i--) {
                         const j = Math.floor(Math.random() * (i + 1));
                         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -659,13 +694,58 @@
                 reviewsContainer.innerHTML = htmlStr;
 
                 // 库存预警
-                const len = currentReviews.length;
+                const len = reviews.length;
                 if (len === 20) showToast('📢 库存剩余 20 条');
                 else if (len === 10) showToast('📢 库存剩余 10 条');
                 else if (len === 5) showToast('📢 库存只剩 5 条啦！');
             }
 
-            // ================= 唤起APP函数 =================
+            async function loadAndRender(useCache = true) {
+                // 先隐藏骨架屏，准备显示内容
+                if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+
+                // 尝试从缓存读取
+                if (useCache) {
+                    const cached = getCachedReviews();
+                    if (cached) {
+                        currentReviews = cached;
+                        renderReviewsFromData(cached);
+                        // 同时后台拉取最新数据更新缓存
+                        if (isCloudReady) {
+                            fetchAllReviews().then(fresh => {
+                                if (fresh && fresh.length > 0) {
+                                    // 比较是否有变化（简单比较长度，可优化）
+                                    if (JSON.stringify(fresh) !== JSON.stringify(currentReviews)) {
+                                        currentReviews = fresh;
+                                        setCachedReviews(fresh);
+                                        renderReviewsFromData(fresh);
+                                    }
+                                }
+                            }).catch(e => {});
+                        }
+                        return;
+                    }
+                }
+
+                // 无缓存或不用缓存，等待云端数据
+                if (!isCloudReady) {
+                    // 如果云未就绪，显示错误
+                    reviewsContainer.innerHTML = `<div class="error-message">❌ 数据库初始化失败：${cloudInitError || '未知错误'}<br>请检查：<br>1. 环境ID是否正确<br>2. 匿名登录是否开启<br>3. 集合 ${COLLECTION_NAME} 是否存在</div>`;
+                    return;
+                }
+
+                // 显示加载中（骨架屏已在，无需额外）
+                const reviews = await fetchAllReviews();
+                if (reviews.length === 0) {
+                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 暂无好评数据，请先在腾讯云添加</div>';
+                } else {
+                    currentReviews = reviews;
+                    setCachedReviews(reviews);
+                    renderReviewsFromData(reviews);
+                }
+            }
+
+            // ================= 唤起APP函数（保持不变） =================
             function tryOpenApp(sequence, fallbackUrl, appName) {
                 let appLaunched = false;
 
@@ -838,7 +918,8 @@
                         showToast('⚠️ 云删除失败，但文本已复制', 2000);
                     }
                     hideModal();
-                    await renderReviews();
+                    // 删除后重新加载（会清除缓存）
+                    await loadAndRender(false); // 不使用缓存，强制拉取最新
                     jumpToDouyin();
                 });
 
@@ -853,7 +934,7 @@
                         showToast('⚠️ 云删除失败，但文本已复制', 2000);
                     }
                     hideModal();
-                    await renderReviews();
+                    await loadAndRender(false);
                     jumpToMeituan();
                 });
 
@@ -863,13 +944,29 @@
                 });
             }
 
-            // ================= 启动一切 =================
+            // ================= 启动流程 =================
             (async function bootstrap() {
-                await initCloud();
-                if (isCloudReady) {
-                    await renderReviews();
-                } else {
-                    reviewsContainer.innerHTML = '<div class="empty-message">❌ 数据库初始化失败，请检查网络或环境配置</div>';
+                // 显示骨架屏（已经存在）
+                // 尝试从缓存加载（秒开）
+                await loadAndRender(true);
+
+                // 同时初始化云（如果还没初始化）
+                if (!isCloudReady) {
+                    await initCloud();
+                    // 如果云初始化成功，且之前是从缓存加载的，可能缓存过期，重新拉取
+                    if (isCloudReady) {
+                        // 如果当前显示的是缓存，但可能已过期，再拉一次
+                        // 但 loadAndRender(true) 已经会在后台拉取，所以这里可以不用重复
+                        // 为了确保，再次调用 loadAndRender 但强制不使用缓存，仅当当前没有数据或错误时
+                        const currentContent = reviewsContainer.innerHTML;
+                        if (currentContent.includes('错误') || currentContent.includes('暂无')) {
+                            await loadAndRender(false);
+                        }
+                    } else {
+                        // 云初始化失败，显示错误
+                        if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+                        reviewsContainer.innerHTML = `<div class="error-message">❌ 数据库初始化失败：${cloudInitError || '未知错误'}<br>请检查：<br>1. 环境ID是否正确<br>2. 匿名登录是否开启<br>3. 集合 ${COLLECTION_NAME} 是否存在</div>`;
+                    }
                 }
             })();
 
