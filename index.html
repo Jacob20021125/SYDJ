@@ -1027,11 +1027,11 @@
                             // 从云端删除该条好评（减少库存）
                             const deleteSuccess = await deleteReviewById(id);
                             if (deleteSuccess) {
-                                showToast('✅ 复制成功，库存已减少', 2000);
+                                showToast('✅ 复制成功', 2000);
                                 // 重新加载列表，让被删除的条目不显示
                                 await loadAndRender(false);
                             } else {
-                                showToast('✅ 复制成功，但库存更新失败', 2000);
+                                showToast('✅ 复制成功', 2000);
                             }
                         }
                     }
