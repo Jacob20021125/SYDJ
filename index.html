@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>商家好评 · 好评宝</title>
+    <!-- 预连接加速 -->
+    <link rel="preconnect" href="https://static.cloudbase.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <!-- Font Awesome 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- 腾讯云 Cloudbase SDK (使用官方最新版) -->
@@ -317,9 +320,9 @@
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9);
             color: white;
-            padding: 16px 32px; /* 增大尺寸 */
+            padding: 16px 32px;
             border-radius: 50px;
-            font-size: 1.1rem; /* 增大字体 */
+            font-size: 1.1rem;
             font-weight: 500;
             z-index: 2000;
             backdrop-filter: blur(10px);
@@ -658,13 +661,8 @@
                 setTimeout(showGuide, 300);
                 guideConfirmBtn.addEventListener('click', (e) => { e.stopPropagation(); hideGuide(); });
                 guideOverlay.addEventListener('click', (e) => { if (e.target === guideOverlay) hideGuide(); });
-                document.addEventListener('click', function(e) {
-                    if (e.target.closest('.wechat-guide-card') || e.target === guideOverlay) return;
-                    if (e.target.closest('.copy-btn, .app-btn, .contact-email')) {
-                        e.preventDefault();
-                        showGuide();
-                    }
-                }, true);
+                // 微信内点击任何按钮都会先弹出引导，但用户点击“我知道了”后不再拦截复制
+                // 我们在下面的事件监听中区分处理
             } else {
                 browserTip.style.display = 'block';
             }
@@ -819,9 +817,7 @@
             // ================= 跨平台跳转函数（最终版）=================
             function jumpToApp(appName) {
                 const config = appName === 'douyin' ? SHOP_CONFIG.douyin : SHOP_CONFIG.meituan;
-                const review = currentReviews.find(r => r.id === selectedReviewId);
-                if (review) copyTextToClipboard(review.text);
-
+                // 注意：此时文案已经复制，不需要再复制
                 // 根据不同平台构建唤醒序列
                 let sequence = [];
                 
@@ -915,28 +911,28 @@
                 }, 3000);
             }
 
-            // ================= 商家配置（最终版：抖音采用可靠唤起，美团不变）=================
+            // ================= 商家配置 ==================
             const SHOP_CONFIG = {
-    meituan: {
-        name: "美团",
-        package: "com.sankuai.meituan",
-        universalLink: "https://i.meituan.com/poi/1755904985",
-        intent: "intent://poi/1755904985#Intent;scheme=imeituan;package=com.sankuai.meituan;launchFlags=0x34000000;end;",
-        schemePath: "imeituan://www.meituan.com/poi/1755904985",
-        schemeShop: "imeituan://www.meituan.com/shop/1755904985",
-        schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
-        homeScheme: "imeituan://",
-        scheme: "imeituan://",
-        fallbackUrl: "http://dpurl.cn/rYQkSEfz"
-    },
-    douyin: {
-        name: "抖音",
-        universalLink: "https://www.douyin.com/",
-        // 纯应用启动 Intent，不带任何页面路径
-        intent: "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.ss.android.ugc.aweme;launchFlags=0x34000000;end;",
-        scheme: "snssdk1128://",
-        fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
-    }
+                meituan: {
+                    name: "美团",
+                    package: "com.sankuai.meituan",
+                    universalLink: "https://i.meituan.com/poi/1755904985",
+                    intent: "intent://poi/1755904985#Intent;scheme=imeituan;package=com.sankuai.meituan;launchFlags=0x34000000;end;",
+                    schemePath: "imeituan://www.meituan.com/poi/1755904985",
+                    schemeShop: "imeituan://www.meituan.com/shop/1755904985",
+                    schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
+                    homeScheme: "imeituan://",
+                    scheme: "imeituan://",
+                    fallbackUrl: "http://dpurl.cn/rYQkSEfz"
+                },
+                douyin: {
+                    name: "抖音",
+                    universalLink: "https://www.douyin.com/",
+                    // 纯应用启动 Intent，不带任何页面路径
+                    intent: "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.ss.android.ugc.aweme;launchFlags=0x34000000;end;",
+                    scheme: "snssdk1128://",
+                    fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
+                }
             };
 
             function renderReviewsFromData(reviews) {
@@ -1000,36 +996,63 @@
             function hideModal() { modalOverlay.classList.remove('show'); selectedReviewId = null; }
             function showModal(id) { selectedReviewId = id; modalOverlay.classList.add('show'); }
 
+            // ================= 事件绑定（区分微信和非微信）=================
             if (!isWeChat) {
+                // 非微信环境：点击复制 → 复制文案 + 弹出APP选择框
                 reviewsContainer.addEventListener('click', (e) => {
                     const copyBtn = e.target.closest('.copy-btn');
                     if (!copyBtn) return;
                     const id = copyBtn.getAttribute('data-id');
-                    if (id) showModal(id);
+                    if (id) {
+                        // 先复制文案
+                        const review = currentReviews.find(r => r.id === id);
+                        if (review) {
+                            copyTextToClipboard(review.text);
+                        }
+                        // 再弹出模态框，让用户选择APP
+                        showModal(id);
+                    }
                 });
-
-                chooseDouyin.addEventListener('click', async () => {
-                    if (!selectedReviewId) { hideModal(); return; }
-                    const deleteSuccess = await deleteReviewById(selectedReviewId);
-                    if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
-                    hideModal();
-                    await loadAndRender(false);
-                    jumpToApp('douyin');
+            } else {
+                // 微信环境：点击复制 → 只复制文案，提示成功，不弹框
+                reviewsContainer.addEventListener('click', (e) => {
+                    const copyBtn = e.target.closest('.copy-btn');
+                    if (!copyBtn) return;
+                    const id = copyBtn.getAttribute('data-id');
+                    if (id) {
+                        const review = currentReviews.find(r => r.id === id);
+                        if (review) {
+                            copyTextToClipboard(review.text);
+                            showToast('✅ 复制成功', 2000); // 简短提示
+                        }
+                    }
                 });
-
-                chooseMeituan.addEventListener('click', async () => {
-                    if (!selectedReviewId) { hideModal(); return; }
-                    const deleteSuccess = await deleteReviewById(selectedReviewId);
-                    if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
-                    hideModal();
-                    await loadAndRender(false);
-                    jumpToApp('meituan');
-                });
-
-                closeModalBtn.addEventListener('click', hideModal);
-                modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) hideModal(); });
             }
 
+            // 模态框内平台选择（非微信环境）
+            chooseDouyin.addEventListener('click', async () => {
+                if (!selectedReviewId) { hideModal(); return; }
+                // 复制已经在点击按钮时完成，这里只执行删除和跳转
+                const deleteSuccess = await deleteReviewById(selectedReviewId);
+                if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
+                hideModal();
+                await loadAndRender(false);
+                jumpToApp('douyin');
+            });
+
+            chooseMeituan.addEventListener('click', async () => {
+                if (!selectedReviewId) { hideModal(); return; }
+                const deleteSuccess = await deleteReviewById(selectedReviewId);
+                if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
+                hideModal();
+                await loadAndRender(false);
+                jumpToApp('meituan');
+            });
+
+            closeModalBtn.addEventListener('click', hideModal);
+            modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) hideModal(); });
+
+            // 启动
             (async function bootstrap() {
                 await loadAndRender(true);
                 if (!isCloudReady) {
