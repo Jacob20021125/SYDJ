@@ -32,6 +32,7 @@
             --guide-btn-bg: #2c3e50;
             --guide-btn-text: #ffffff;
             --error-bg: rgba(255, 100, 100, 0.2);
+            --manual-copy-bg: rgba(0, 0, 0, 0.8);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -50,6 +51,7 @@
                 --guide-btn-bg: #cccccc;
                 --guide-btn-text: #121212;
                 --error-bg: rgba(180, 60, 60, 0.4);
+                --manual-copy-bg: rgba(30, 30, 30, 0.95);
             }
         }
 
@@ -327,12 +329,72 @@
             max-width: 80%;
         }
 
+        /* 手动复制弹窗 */
+        .manual-copy-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 4000;
+            transition: opacity 0.2s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .manual-copy-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .manual-copy-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(30px);
+            border-radius: 32px;
+            padding: 24px;
+            max-width: 320px;
+            width: 85%;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 20px 40px var(--shadow-color);
+            text-align: center;
+        }
+        .manual-copy-text {
+            background: var(--btn-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            padding: 16px;
+            margin: 16px 0;
+            font-size: 1rem;
+            color: var(--text-primary);
+            word-break: break-word;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .manual-copy-hint {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        .manual-copy-btn {
+            background: var(--guide-btn-bg);
+            border: none;
+            border-radius: 40px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--guide-btn-text);
+            cursor: pointer;
+            transition: 0.1s;
+            border: 1px solid var(--border-light);
+        }
+        .manual-copy-btn:active {
+            transform: scale(0.96);
+        }
+
         .wechat-guide-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(8px);
             display: flex;
@@ -458,6 +520,7 @@
 <body>
     <div class="toast-message" id="toastMessage"></div>
 
+    <!-- 微信引导弹窗 -->
     <div class="wechat-guide-overlay" id="wechatGuideOverlay">
         <div class="wechat-guide-card">
             <div class="guide-icon">↗️</div>
@@ -466,6 +529,16 @@
             <div class="guide-text">点击右上角「···」</div>
             <div class="guide-sub">选择「浏览器打开」即可正常跳转APP</div>
             <button class="guide-btn" id="guideConfirmBtn">我知道了</button>
+        </div>
+    </div>
+
+    <!-- 手动复制弹窗 -->
+    <div class="manual-copy-overlay" id="manualCopyOverlay">
+        <div class="manual-copy-card">
+            <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 8px;">📋 复制失败</div>
+            <div class="manual-copy-hint">请长按下方文字手动复制</div>
+            <div class="manual-copy-text" id="manualCopyText"></div>
+            <button class="manual-copy-btn" id="manualCopyCloseBtn">关闭</button>
         </div>
     </div>
 
@@ -486,6 +559,7 @@
         </div>
     </div>
 
+    <!-- 选择APP模态框 -->
     <div class="modal-overlay" id="appChoiceModal">
         <div class="modal-glass">
             <div class="modal-title">平台选择</div>
@@ -537,6 +611,9 @@
             const toastMessage = document.getElementById('toastMessage');
             const guideOverlay = document.getElementById('wechatGuideOverlay');
             const guideConfirmBtn = document.getElementById('guideConfirmBtn');
+            const manualCopyOverlay = document.getElementById('manualCopyOverlay');
+            const manualCopyText = document.getElementById('manualCopyText');
+            const manualCopyCloseBtn = document.getElementById('manualCopyCloseBtn');
 
             function showToast(msg, duration = 3000) {
                 toastMessage.style.display = 'block';
@@ -548,6 +625,18 @@
 
             function showGuide() { guideOverlay.classList.add('show'); }
             function hideGuide() { guideOverlay.classList.remove('show'); }
+
+            function showManualCopy(text) {
+                manualCopyText.textContent = text;
+                manualCopyOverlay.classList.add('show');
+            }
+            function hideManualCopy() {
+                manualCopyOverlay.classList.remove('show');
+            }
+            manualCopyCloseBtn.addEventListener('click', hideManualCopy);
+            manualCopyOverlay.addEventListener('click', (e) => {
+                if (e.target === manualCopyOverlay) hideManualCopy();
+            });
 
             if (isWeChat) {
                 browserTip.style.display = 'none';
@@ -633,36 +722,77 @@
                 }
             }
 
-            // ================= 增强版复制函数（兼容小米等所有手机）=================
+            // ================= 终极复制函数（五层保障）=================
             function copyTextToClipboard(text) {
-                // 方案1: 现代API
+                // 第一层：现代 Clipboard API
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).catch(() => {
-                        // 如果现代API失败，降级到方案2
-                        fallbackCopy(text);
+                    navigator.clipboard.writeText(text).then(() => {
+                        console.log('Clipboard API 复制成功');
+                    }).catch(() => {
+                        // 失败后尝试传统方法
+                        fallbackCopy1(text);
                     });
                 } else {
-                    // 方案2: 传统textarea方法
-                    fallbackCopy(text);
+                    fallbackCopy1(text);
                 }
             }
 
-            function fallbackCopy(text) {
+            function fallbackCopy1(text) {
+                // 第二层：传统 textarea 方法
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
                 textarea.style.position = 'fixed';
                 textarea.style.opacity = '0';
                 document.body.appendChild(textarea);
                 textarea.select();
-                textarea.setSelectionRange(0, 99999); // 移动端兼容
+                textarea.setSelectionRange(0, 99999);
                 try {
-                    document.execCommand('copy');
-                    console.log('传统复制成功');
+                    const success = document.execCommand('copy');
+                    if (success) {
+                        console.log('传统复制成功');
+                        document.body.removeChild(textarea);
+                        return;
+                    } else {
+                        // 如果失败，尝试另一种方法
+                        fallbackCopy2(text);
+                    }
                 } catch (err) {
                     console.error('传统复制失败', err);
-                    showToast('⚠️ 复制失败，请长按文案手动复制', 3000);
+                    fallbackCopy2(text);
                 }
                 document.body.removeChild(textarea);
+            }
+
+            function fallbackCopy2(text) {
+                // 第三层：针对移动端输入法的特殊处理（使用 input 元素）
+                const input = document.createElement('input');
+                input.value = text;
+                input.style.position = 'fixed';
+                input.style.opacity = '0';
+                document.body.appendChild(input);
+                input.focus();
+                input.select();
+                input.setSelectionRange(0, 99999);
+                try {
+                    const success = document.execCommand('copy');
+                    if (success) {
+                        console.log('input复制成功');
+                        document.body.removeChild(input);
+                        return;
+                    } else {
+                        fallbackCopy3(text);
+                    }
+                } catch (err) {
+                    fallbackCopy3(text);
+                }
+                document.body.removeChild(input);
+            }
+
+            function fallbackCopy3(text) {
+                // 第四层：显示手动复制弹窗
+                showManualCopy(text);
+                // 同时提示用户
+                showToast('⚠️ 自动复制失败，请长按文案手动复制', 4000);
             }
 
             function renderReviewsFromData(reviews) {
@@ -809,6 +939,7 @@
                         { type: 'scheme', url: config.scheme }
                     ];
                 } else if (isAndroid || isHarmony) {
+                    // 优先使用带 flags 的 intent
                     sequence = [
                         { type: 'intent', url: config.intent },
                         { type: 'universal', url: config.universalLink },
@@ -851,7 +982,7 @@
                 tryOpenApp(sequence, config.fallbackUrl, '美团');
             }
 
-            // ================= 商家配置（已优化：抖音intent添加launchFlags以保留页面）=================
+            // ================= 商家配置（抖音intent增加多个flags以提升兼容性）=================
             const SHOP_CONFIG = {
                 meituan: {
                     name: "美团",
@@ -866,8 +997,8 @@
                 douyin: {
                     name: "抖音",
                     universalLink: "https://www.douyin.com/",
-                    // 添加了 launchFlags 标志，使跳转后保留当前页面（仅Android有效）
-                    intent: "intent://feed#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;launchFlags=0x20000000;end;",
+                    // 组合 flags: 0x10000000 (NEW_TASK) + 0x20000000 (REORDER_TO_FRONT) + 0x04000000 (CLEAR_TOP)
+                    intent: "intent://feed#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;launchFlags=0x34000000;end;",
                     scheme: "snssdk1128://",
                     fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
                 }
@@ -894,7 +1025,7 @@
                     if (!selectedReviewId) { hideModal(); return; }
                     const review = currentReviews.find(r => r.id === selectedReviewId);
                     if (review) {
-                        copyTextToClipboard(review.text); // 使用增强版复制
+                        copyTextToClipboard(review.text);
                     }
                     const deleteSuccess = await deleteReviewById(selectedReviewId);
                     if (!deleteSuccess) {
@@ -909,7 +1040,7 @@
                     if (!selectedReviewId) { hideModal(); return; }
                     const review = currentReviews.find(r => r.id === selectedReviewId);
                     if (review) {
-                        copyTextToClipboard(review.text); // 使用增强版复制
+                        copyTextToClipboard(review.text);
                     }
                     const deleteSuccess = await deleteReviewById(selectedReviewId);
                     if (!deleteSuccess) {
