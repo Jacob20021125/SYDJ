@@ -12,7 +12,7 @@
     <!-- 腾讯云 Cloudbase SDK (使用官方最新版) -->
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
-        /* ====== 完整样式 ====== */
+        /* ====== 完整样式（与您之前的一致）====== */
         * {
             margin: 0;
             padding: 0;
@@ -1014,16 +1014,25 @@
                     }
                 });
             } else {
-                // 微信环境：点击复制 → 只复制文案，提示成功，不弹框
-                reviewsContainer.addEventListener('click', (e) => {
+                // 微信环境：点击复制 → 复制文案 + 删除库存 + 提示成功，不弹框
+                reviewsContainer.addEventListener('click', async (e) => {
                     const copyBtn = e.target.closest('.copy-btn');
                     if (!copyBtn) return;
                     const id = copyBtn.getAttribute('data-id');
                     if (id) {
                         const review = currentReviews.find(r => r.id === id);
                         if (review) {
+                            // 复制文案
                             copyTextToClipboard(review.text);
-                            showToast('✅ 复制成功', 2000); // 简短提示
+                            // 从云端删除该条好评（减少库存）
+                            const deleteSuccess = await deleteReviewById(id);
+                            if (deleteSuccess) {
+                                showToast('✅ 复制成功，库存已减少', 2000);
+                                // 重新加载列表，让被删除的条目不显示
+                                await loadAndRender(false);
+                            } else {
+                                showToast('✅ 复制成功，但库存更新失败', 2000);
+                            }
                         }
                     }
                 });
