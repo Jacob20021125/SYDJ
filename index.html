@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>商家好评 · 极速版</title>
+    <title>商家好评 · 极速版（默认CS1）</title>
     <!-- Font Awesome 6 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- 腾讯云 Cloudbase SDK (使用 unpkg 稳定链接) -->
-   <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
+    <!-- 腾讯云 Cloudbase SDK (使用官方最新版) -->
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
-        /* ====== 完整样式（已修复）====== */
+        /* ====== 完整样式 ====== */
         * {
             margin: 0;
             padding: 0;
@@ -594,10 +594,6 @@
 
             async function initCloud() {
                 try {
-                    // 确保 cloudbase 已定义
-                    if (typeof cloudbase === 'undefined') {
-                        throw new Error('cloudbase SDK 加载失败，请刷新页面');
-                    }
                     const app = cloudbase.init({ env: CLOUD_ENV });
                     await app.auth().signInAnonymously();
                     db = app.database();
@@ -635,6 +631,38 @@
                     showToast('删除失败：' + (err.message || ''), 2000);
                     return false;
                 }
+            }
+
+            // ================= 增强版复制函数（兼容小米等所有手机）=================
+            function copyTextToClipboard(text) {
+                // 方案1: 现代API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).catch(() => {
+                        // 如果现代API失败，降级到方案2
+                        fallbackCopy(text);
+                    });
+                } else {
+                    // 方案2: 传统textarea方法
+                    fallbackCopy(text);
+                }
+            }
+
+            function fallbackCopy(text) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                textarea.setSelectionRange(0, 99999); // 移动端兼容
+                try {
+                    document.execCommand('copy');
+                    console.log('传统复制成功');
+                } catch (err) {
+                    console.error('传统复制失败', err);
+                    showToast('⚠️ 复制失败，请长按文案手动复制', 3000);
+                }
+                document.body.removeChild(textarea);
             }
 
             function renderReviewsFromData(reviews) {
@@ -823,6 +851,7 @@
                 tryOpenApp(sequence, config.fallbackUrl, '美团');
             }
 
+            // ================= 商家配置（已优化：抖音intent添加launchFlags以保留页面）=================
             const SHOP_CONFIG = {
                 meituan: {
                     name: "美团",
@@ -837,7 +866,8 @@
                 douyin: {
                     name: "抖音",
                     universalLink: "https://www.douyin.com/",
-                    intent: "intent://feed#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;end;",
+                    // 添加了 launchFlags 标志，使跳转后保留当前页面（仅Android有效）
+                    intent: "intent://feed#Intent;package=com.ss.android.ugc.aweme;scheme=snssdk1128;launchFlags=0x20000000;end;",
                     scheme: "snssdk1128://",
                     fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
                 }
@@ -864,7 +894,7 @@
                     if (!selectedReviewId) { hideModal(); return; }
                     const review = currentReviews.find(r => r.id === selectedReviewId);
                     if (review) {
-                        navigator.clipboard.writeText(review.text).catch(() => {});
+                        copyTextToClipboard(review.text); // 使用增强版复制
                     }
                     const deleteSuccess = await deleteReviewById(selectedReviewId);
                     if (!deleteSuccess) {
@@ -879,7 +909,7 @@
                     if (!selectedReviewId) { hideModal(); return; }
                     const review = currentReviews.find(r => r.id === selectedReviewId);
                     if (review) {
-                        navigator.clipboard.writeText(review.text).catch(() => {});
+                        copyTextToClipboard(review.text); // 使用增强版复制
                     }
                     const deleteSuccess = await deleteReviewById(selectedReviewId);
                     if (!deleteSuccess) {
