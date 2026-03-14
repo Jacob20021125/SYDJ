@@ -996,14 +996,14 @@
         scheme: "imeituan://",
         fallbackUrl: "http://dpurl.cn/rYQkSEfz"
     },
-    douyin: {
-        name: "抖音",
-        universalLink: "https://www.douyin.com/",
-        // 核心修改：仅通过包名唤醒，不指定任何页面路径，Flags组合：NEW_TASK | REORDER_TO_FRONT
-        intent: "intent://#Intent;package=com.ss.android.ugc.aweme;launchFlags=0x30000000;end;",
-        scheme: "snssdk1128://",
-        fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
-    }
+   douyin: {
+    name: "抖音",
+    universalLink: "https://www.douyin.com/",
+    // 组合方案：使用Scheme+包名+Flags，希望能保留页面
+    intent: "intent://feed#Intent;scheme=snssdk1128;package=com.ss.android.ugc.aweme;launchFlags=0x30000000;end;",
+    scheme: "snssdk1128://",
+    fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
+}
 };
             function hideModal() {
                 modalOverlay.classList.remove('show');
