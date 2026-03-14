@@ -999,8 +999,8 @@
    douyin: {
     name: "抖音",
     universalLink: "https://www.douyin.com/",
-    // 组合方案：使用Scheme+包名+Flags，希望能保留页面
-    intent: "intent://feed#Intent;scheme=snssdk1128;package=com.ss.android.ugc.aweme;launchFlags=0x30000000;end;",
+    // 尝试使用 MULTIPLE_TASK 和 CLEAR_TOP 的组合，让首页在新的任务栈中打开
+    intent: "intent://feed#Intent;scheme=snssdk1128;package=com.ss.android.ugc.aweme;launchFlags=0x14000000;end;",
     scheme: "snssdk1128://",
     fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
 }
