@@ -990,7 +990,7 @@
 
                 const reviews = await fetchAllReviews();
                 if (!reviews.length) {
-                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 暂无好评数据，请先在腾讯云添加</div>';
+                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 暂无好评数据，请联系管理员添加</div>';
                 } else {
                     currentReviews = reviews;
                     setCachedReviews(reviews);
