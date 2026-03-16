@@ -542,10 +542,10 @@
                             copyTextToClipboard(review.text);
                             const deleteSuccess = await deleteReviewById(id);
                             if (deleteSuccess) {
-                                showToast('✅ 复制成功，库存已减少', 2000);
+                                showToast('✅ 复制成功', 2000);
                                 await loadAndRender(false);
                             } else {
-                                showToast('✅ 复制成功，但库存更新失败', 2000);
+                                showToast('✅ 复制成功', 2000);
                             }
                         }
                     }
