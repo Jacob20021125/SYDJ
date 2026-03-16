@@ -267,82 +267,168 @@
                 }
             }
 
-            // ================= 终极复制函数 =================
-            function copyTextToClipboard(text) {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        console.log('Clipboard API 复制成功');
-                    }).catch(() => {
-                        fallbackCopy1(text);
-                    });
-                } else {
-                    fallbackCopy1(text);
-                }
-            }
+           // ================= 终极复制函数 =================
+function copyTextToClipboard(text) {
+    // 检测小米浏览器
+    const isMiBrowser = ua.includes('miui') || ua.includes('xiaomi');
+    
+    if (isMiBrowser) {
+        // 小米浏览器：只尝试一次，不循环尝试
+        simpleCopyForMiBrowser(text);
+    } else {
+        // 其他浏览器：保留完整的多层保障
+        fullCopyForOtherBrowsers(text);
+    }
+}
 
-            function fallbackCopy1(text) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                textarea.setSelectionRange(0, 99999);
-                try {
-                    if (document.execCommand('copy')) {
-                        console.log('传统复制成功');
-                        document.body.removeChild(textarea);
-                        return;
-                    }
-                } catch (err) {}
-                document.body.removeChild(textarea);
-                fallbackCopy2(text);
-            }
+// 小米浏览器专用——最简单的一次性复制
+function simpleCopyForMiBrowser(text) {
+    // 直接使用最基础的textarea方式，只尝试一次
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.pointerEvents = 'none';
+    document.body.appendChild(textarea);
+    
+    // 强制获取焦点
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    
+    let success = false;
+    try {
+        success = document.execCommand('copy');
+    } catch (err) {
+        console.log('复制异常', err);
+    }
+    
+    document.body.removeChild(textarea);
+    
+    if (success) {
+        showToast('✅ 复制成功', 2000);
+    } else {
+        // 一次性失败后，直接引导手动复制，不再尝试其他方法
+        showMiBrowserSimpleGuide(text);
+    }
+}
 
-            function fallbackCopy2(text) {
-                const input = document.createElement('input');
-                input.value = text;
-                input.style.position = 'fixed';
-                input.style.opacity = '0';
-                document.body.appendChild(input);
-                input.focus();
-                input.select();
-                input.setSelectionRange(0, 99999);
-                try {
-                    if (document.execCommand('copy')) {
-                        console.log('input复制成功');
-                        document.body.removeChild(input);
-                        return;
-                    }
-                } catch (err) {}
-                document.body.removeChild(input);
-                fallbackCopy3(text);
-            }
+// 小米浏览器专用——极简手动复制引导
+function showMiBrowserSimpleGuide(text) {
+    const guideDiv = document.createElement('div');
+    guideDiv.id = 'miSimpleGuide';
+    guideDiv.style.cssText = `
+        position:fixed; top:0; left:0; width:100%; height:100%;
+        background:rgba(0,0,0,0.7); backdrop-filter:blur(5px);
+        display:flex; align-items:center; justify-content:center;
+        z-index:5000;
+    `;
+    
+    guideDiv.innerHTML = `
+        <div style="background:var(--card-bg, white); backdrop-filter:blur(20px);
+                    border-radius:32px; padding:28px; max-width:340px; width:85%;
+                    border:1px solid rgba(255,255,255,0.2); text-align:center;">
+            <div style="font-size:1.4rem; margin-bottom:16px;">📋 复制说明</div>
+            <div style="background:var(--btn-bg, #f5f5f5); border-radius:16px;
+                        padding:20px; margin-bottom:20px; font-size:1.1rem;
+                        color:var(--text-primary, #333); word-break:break-word;
+                        text-align:left; line-height:1.5;">
+                ${text}
+            </div>
+            <div style="color:var(--text-secondary, #666); font-size:0.95rem;
+                        margin-bottom:24px;">
+                ⚡ 长按上方文字即可复制
+            </div>
+            <button onclick="this.closest('div[style*="fixed"]').remove()"
+                    style="background:#2196F3; border:none; border-radius:60px;
+                           padding:14px 24px; color:white; font-size:1.1rem;
+                           font-weight:600; cursor:pointer; width:100%;">
+                关闭
+            </button>
+        </div>
+    `;
+    document.body.appendChild(guideDiv);
+}
 
-            function fallbackCopy3(text) {
-                showManualCopy(text);
-                let permissionGuide = '';
-                switch(phoneBrand) {
-                    case 'huawei':
-                        permissionGuide = '华为手机：请到「设置」-「应用」-「权限管理」- 找到您的浏览器 - 开启「剪贴板」权限';
-                        break;
-                    case 'xiaomi':
-                        permissionGuide = '小米手机：请到「设置」-「应用设置」-「应用管理」- 找到您的浏览器 -「权限管理」- 开启「剪贴板」权限';
-                        break;
-                    case 'oppo':
-                    case 'vivo':
-                        permissionGuide = '请到「设置」-「权限与隐私」-「权限管理」- 找到您的浏览器 - 开启「剪贴板」权限';
-                        break;
-                    case 'samsung':
-                        permissionGuide = '三星手机：请到「设置」-「应用」- 找到您的浏览器 -「权限」- 开启「剪贴板」权限';
-                        break;
-                    default:
-                        permissionGuide = '请在手机「设置」中为当前浏览器开启「剪贴板」权限';
-                }
-                setTimeout(() => {
-                    showToast('📋 复制失败，已弹出手动复制窗口。' + permissionGuide, 7000);
-                }, 500);
-            }
+// 其他浏览器的完整复制方案（保持不变）
+function fullCopyForOtherBrowsers(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            console.log('Clipboard API 复制成功');
+        }).catch(() => {
+            fallbackCopy1(text);
+        });
+    } else {
+        fallbackCopy1(text);
+    }
+}
+
+// 原有的备用复制函数（仅用于非小米浏览器）
+function fallbackCopy1(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    try {
+        if (document.execCommand('copy')) {
+            console.log('传统复制成功');
+            document.body.removeChild(textarea);
+            return;
+        }
+    } catch (err) {}
+    document.body.removeChild(textarea);
+    fallbackCopy2(text);
+}
+
+function fallbackCopy2(text) {
+    const input = document.createElement('input');
+    input.value = text;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
+    input.setSelectionRange(0, 99999);
+    try {
+        if (document.execCommand('copy')) {
+            console.log('input复制成功');
+            document.body.removeChild(input);
+            return;
+        }
+    } catch (err) {}
+    document.body.removeChild(input);
+    fallbackCopy3(text);
+}
+
+function fallbackCopy3(text) {
+    showManualCopy(text);
+    
+    let permissionGuide = '';
+    switch(phoneBrand) {
+        case 'huawei':
+            permissionGuide = '华为手机：请到「设置」-「应用」-「权限管理」- 找到您的浏览器 - 开启「剪贴板」权限';
+            break;
+        case 'xiaomi':
+            permissionGuide = '小米手机：请到「设置」-「应用设置」-「应用管理」- 找到您的浏览器 -「权限管理」- 开启「剪贴板」权限';
+            break;
+        case 'oppo':
+        case 'vivo':
+            permissionGuide = '请到「设置」-「权限与隐私」-「权限管理」- 找到您的浏览器 - 开启「剪贴板」权限';
+            break;
+        case 'samsung':
+            permissionGuide = '三星手机：请到「设置」-「应用」- 找到您的浏览器 -「权限」- 开启「剪贴板」权限';
+            break;
+        default:
+            permissionGuide = '请在手机「设置」中为当前浏览器开启「剪贴板」权限';
+    }
+    
+    setTimeout(() => {
+        showToast('📋 复制失败，已弹出手动复制窗口。' + permissionGuide, 7000);
+    }, 500);
+}
 
             // ================= 跨平台跳转函数 =================
             function jumpToApp(appName) {
