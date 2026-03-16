@@ -12,515 +12,57 @@
     <!-- 腾讯云 Cloudbase SDK (使用官方最新版) -->
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
-        /* ====== 完整样式（与您之前的一致）====== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-        }
-
-        :root {
-            --bg-color: #f5f7fa;
-            --card-bg: rgba(255, 255, 255, 0.6);
-            --text-primary: #1e2a3a;
-            --text-secondary: #2c3e50;
-            --border-light: rgba(255, 255, 255, 0.3);
-            --shadow-color: rgba(0, 0, 0, 0.08);
-            --btn-bg: rgba(255, 255, 255, 0.7);
-            --btn-hover: rgba(255, 255, 255, 0.9);
-            --warning-bg: rgba(255, 230, 200, 0.7);
-            --guide-bg: rgba(255, 255, 255, 0.7);
-            --guide-border: rgba(0, 0, 0, 0.2);
-            --guide-btn-bg: #2c3e50;
-            --guide-btn-text: #ffffff;
-            --error-bg: rgba(255, 100, 100, 0.2);
-            --manual-copy-bg: rgba(0, 0, 0, 0.8);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #121212;
-                --card-bg: rgba(40, 40, 40, 0.7);
-                --text-primary: #f0f0f0;
-                --text-secondary: #cccccc;
-                --border-light: rgba(255, 255, 255, 0.1);
-                --shadow-color: rgba(0, 0, 0, 0.5);
-                --btn-bg: rgba(60, 60, 60, 0.7);
-                --btn-hover: rgba(80, 80, 80, 0.9);
-                --warning-bg: rgba(80, 60, 30, 0.7);
-                --guide-bg: rgba(40, 40, 40, 0.8);
-                --guide-border: rgba(255, 255, 255, 0.2);
-                --guide-btn-bg: #cccccc;
-                --guide-btn-text: #121212;
-                --error-bg: rgba(180, 60, 60, 0.4);
-                --manual-copy-bg: rgba(30, 30, 30, 0.95);
-            }
-        }
-
-        body {
-            background-color: var(--bg-color);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 16px;
-        }
-
-        .glass-container {
-            width: 100%;
-            max-width: 480px;
-            background: var(--card-bg);
-            backdrop-filter: blur(18px) saturate(180%);
-            -webkit-backdrop-filter: blur(18px) saturate(180%);
-            border-radius: 36px 36px 28px 28px;
-            padding: 24px 20px 20px;
-            box-shadow: 0 20px 40px var(--shadow-color), 0 0 0 1px var(--border-light) inset;
-            border: 1px solid var(--border-light);
-        }
-
-        .reviews-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 24px;
-            min-height: 280px;
-        }
-
-        .review-card {
-            background: var(--btn-bg);
-            backdrop-filter: blur(8px);
-            border-radius: 28px;
-            padding: 16px 18px 16px 22px;
-            border: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 8px 16px var(--shadow-color);
-            transition: transform 0.2s ease, box-shadow 0.3s ease;
-            animation: cardPop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
-        }
-
-        .review-card:active {
-            transform: scale(0.98);
-        }
-
-        @keyframes cardPop {
-            0% { opacity: 0; transform: translateY(15px) scale(0.95); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .review-text {
-            font-size: 1.05rem;
-            line-height: 1.4;
-            color: var(--text-primary);
-            font-weight: 480;
-            word-break: break-word;
-            flex: 1;
-            padding-right: 12px;
-        }
-
-        .copy-btn {
-            background: var(--btn-bg);
-            border: 1px solid var(--border-light);
-            border-radius: 40px;
-            padding: 10px 18px;
-            font-size: 0.9rem;
-            font-weight: 550;
-            color: var(--text-secondary);
-            backdrop-filter: blur(4px);
-            cursor: pointer;
-            transition: all 0.15s ease;
-            box-shadow: 0 4px 8px var(--shadow-color);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .copy-btn:active {
-            transform: scale(0.92);
-            background: var(--btn-hover);
-        }
-
-        .copy-btn::after {
-            content: "📋";
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .browser-tip {
-            background: var(--warning-bg);
-            backdrop-filter: blur(5px);
-            border-radius: 30px;
-            padding: 10px 16px;
-            margin: 10px 0 16px;
-            font-size: 0.85rem;
-            text-align: center;
-            color: var(--text-primary);
-            border: 1px solid var(--border-light);
-            box-shadow: 0 4px 10px var(--shadow-color);
-        }
-
-        .contact-footer {
-            margin-top: 16px;
-            text-align: center;
-            padding: 18px 10px 10px;
-            border-top: 1px solid var(--border-light);
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            backdrop-filter: blur(4px);
-            border-radius: 0 0 24px 24px;
-        }
-
-        .contact-email {
-            background: var(--btn-bg);
-            display: inline-block;
-            padding: 8px 28px;
-            border-radius: 50px;
-            border: 1px solid var(--border-light);
-            margin-top: 8px;
-            font-size: 0.9rem;
-            letter-spacing: 0.5px;
-            color: var(--text-primary);
-            box-shadow: 0 2px 6px var(--shadow-color);
-            text-decoration: none;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            transition: opacity 0.2s;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .modal-overlay.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal-glass {
-            background: var(--card-bg);
-            backdrop-filter: blur(30px) saturate(200%);
-            -webkit-backdrop-filter: blur(30px) saturate(200%);
-            border-radius: 48px;
-            padding: 32px 24px;
-            width: 300px;
-            border: 1px solid var(--border-light);
-            box-shadow: 0 30px 60px var(--shadow-color);
-            transform: scale(0.9);
-            transition: transform 0.2s;
-            text-align: center;
-        }
-
-        .modal-overlay.show .modal-glass {
-            transform: scale(1);
-        }
-
-        .modal-title {
-            color: var(--text-primary);
-            font-size: 1.4rem;
-            font-weight: 580;
-            margin-bottom: 20px;
-        }
-
-        .app-options {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .app-btn {
-            background: var(--btn-bg);
-            border: 1px solid var(--border-light);
-            border-radius: 60px;
-            padding: 16px 10px;
-            font-size: 1.25rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            color: var(--text-primary);
-            backdrop-filter: blur(8px);
-            cursor: pointer;
-            transition: all 0.15s;
-            box-shadow: 0 6px 12px var(--shadow-color);
-        }
-
-        .app-btn:active {
-            transform: scale(0.96);
-            background: var(--btn-hover);
-        }
-
-        .app-btn i {
-            font-size: 1.5rem;
-            width: 1.5rem;
-            text-align: center;
-        }
-
-        .app-btn .fa-tiktok {
-            color: #000;
-        }
-        @media (prefers-color-scheme: dark) {
-            .app-btn .fa-tiktok {
-                color: #fff;
-            }
-        }
-
-        .cancel-btn {
-            background: transparent;
-            border: 1px solid var(--border-light);
-            border-radius: 40px;
-            padding: 12px;
-            margin-top: 8px;
-            font-size: 1rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: 0.1s;
-        }
-        .cancel-btn:active {
-            background: var(--btn-bg);
-        }
-
-        .empty-message {
-            text-align: center;
-            padding: 30px 0;
-            color: var(--text-secondary);
-            font-style: italic;
-            font-size: 1.2rem;
-        }
-
-        .error-message {
-            text-align: center;
-            padding: 20px;
-            color: #ff6b6b;
-            background: var(--error-bg);
-            border-radius: 24px;
-            margin: 20px 0;
-            font-size: 1rem;
-            backdrop-filter: blur(4px);
-            border: 1px solid var(--border-light);
-        }
-
-        .toast-message {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 16px 32px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 500;
-            z-index: 2000;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            display: none;
-            text-align: center;
-            max-width: 90%;
-            line-height: 1.4;
-        }
-
-        .manual-copy-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 4000;
-            transition: opacity 0.2s;
-            opacity: 0;
-            pointer-events: none;
-        }
-        .manual-copy-overlay.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .manual-copy-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(30px);
-            border-radius: 32px;
-            padding: 24px;
-            max-width: 340px;
-            width: 85%;
-            border: 1px solid var(--border-light);
-            box-shadow: 0 20px 40px var(--shadow-color);
-            text-align: center;
-        }
-        .manual-copy-text {
-            background: var(--btn-bg);
-            border: 1px solid var(--border-light);
-            border-radius: 20px;
-            padding: 16px;
-            margin: 16px 0;
-            font-size: 1rem;
-            color: var(--text-primary);
-            word-break: break-word;
-            text-align: left;
-            max-height: 200px;
-            overflow-y: auto;
-            user-select: text;
-            -webkit-user-select: text;
-        }
-        .manual-copy-hint {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-bottom: 20px;
-        }
-        .manual-copy-btn {
-            background: var(--guide-btn-bg);
-            border: none;
-            border-radius: 40px;
-            padding: 12px 24px;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--guide-btn-text);
-            cursor: pointer;
-            transition: 0.1s;
-            border: 1px solid var(--border-light);
-        }
-        .manual-copy-btn:active {
-            transform: scale(0.96);
-        }
-
-        .wechat-guide-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-            transition: opacity 0.15s ease-out;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .wechat-guide-overlay.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .wechat-guide-card {
-            background: var(--guide-bg);
-            backdrop-filter: blur(40px) saturate(200%);
-            -webkit-backdrop-filter: blur(40px) saturate(200%);
-            border-radius: 48px;
-            padding: 36px 28px;
-            max-width: 380px;
-            width: 85%;
-            border: 1px solid var(--guide-border);
-            box-shadow: 0 30px 60px var(--shadow-color);
-            text-align: center;
-            color: var(--text-primary);
-            animation: guidePop 0.3s cubic-bezier(0.21, 1.11, 0.35, 1.1);
-        }
-
-        @keyframes guidePop {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .guide-icon {
-            font-size: 80px;
-            line-height: 1;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 10px 8px var(--shadow-color));
-            animation: arrowBounce 1.2s infinite alternate ease-in-out;
-        }
-
-        @keyframes arrowBounce {
-            from { transform: translateY(0) rotate(25deg); }
-            to { transform: translateY(-15px) rotate(25deg); }
-        }
-
-        .guide-dots {
-            font-size: 60px;
-            letter-spacing: 12px;
-            color: var(--text-secondary);
-            margin: 0 0 15px;
-            text-shadow: 0 4px 8px var(--shadow-color);
-        }
-
-        .guide-title {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            margin-bottom: 20px;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 4px var(--shadow-color);
-        }
-
-        .guide-text {
-            font-size: 1.4rem;
-            font-weight: 700;
-            background: var(--btn-bg);
-            padding: 14px 0;
-            border-radius: 60px;
-            margin: 20px 0 12px;
-            border: 1px solid var(--border-light);
-            color: var(--text-primary);
-        }
-
-        .guide-sub {
-            font-size: 1.1rem;
-            margin-bottom: 28px;
-            opacity: 0.9;
-            color: var(--text-secondary);
-        }
-
-        .guide-btn {
-            background: var(--guide-btn-bg);
-            border: none;
-            border-radius: 60px;
-            padding: 16px 30px;
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--guide-btn-text);
-            width: 100%;
-            box-shadow: 0 12px 24px var(--shadow-color);
-            cursor: pointer;
-            transition: transform 0.1s ease, background 0.1s;
-            border: 1px solid var(--border-light);
-        }
-
-        .guide-btn:active {
-            transform: scale(0.96);
-            background: var(--btn-hover);
-        }
-
-        .loading-skeleton {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .skeleton-card {
-            background: var(--btn-bg);
-            border-radius: 28px;
-            height: 80px;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
+        /* 完整样式（与之前一致，为节省篇幅已合并） */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+        :root { --bg-color: #f5f7fa; --card-bg: rgba(255, 255, 255, 0.6); --text-primary: #1e2a3a; --text-secondary: #2c3e50; --border-light: rgba(255, 255, 255, 0.3); --shadow-color: rgba(0, 0, 0, 0.08); --btn-bg: rgba(255, 255, 255, 0.7); --btn-hover: rgba(255, 255, 255, 0.9); --warning-bg: rgba(255, 230, 200, 0.7); --guide-bg: rgba(255, 255, 255, 0.7); --guide-border: rgba(0, 0, 0, 0.2); --guide-btn-bg: #2c3e50; --guide-btn-text: #ffffff; --error-bg: rgba(255, 100, 100, 0.2); --manual-copy-bg: rgba(0, 0, 0, 0.8); }
+        @media (prefers-color-scheme: dark) { :root { --bg-color: #121212; --card-bg: rgba(40, 40, 40, 0.7); --text-primary: #f0f0f0; --text-secondary: #cccccc; --border-light: rgba(255, 255, 255, 0.1); --shadow-color: rgba(0, 0, 0, 0.5); --btn-bg: rgba(60, 60, 60, 0.7); --btn-hover: rgba(80, 80, 80, 0.9); --warning-bg: rgba(80, 60, 30, 0.7); --guide-bg: rgba(40, 40, 40, 0.8); --guide-border: rgba(255, 255, 255, 0.2); --guide-btn-bg: #cccccc; --guide-btn-text: #121212; --error-bg: rgba(180, 60, 60, 0.4); --manual-copy-bg: rgba(30, 30, 30, 0.95); } }
+        body { background-color: var(--bg-color); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 16px; }
+        .glass-container { width: 100%; max-width: 480px; background: var(--card-bg); backdrop-filter: blur(18px); border-radius: 36px 36px 28px 28px; padding: 24px 20px 20px; box-shadow: 0 20px 40px var(--shadow-color), 0 0 0 1px var(--border-light) inset; border: 1px solid var(--border-light); }
+        .reviews-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; min-height: 280px; }
+        .review-card { background: var(--btn-bg); backdrop-filter: blur(8px); border-radius: 28px; padding: 16px 18px 16px 22px; border: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 8px 16px var(--shadow-color); transition: transform 0.2s; animation: cardPop 0.3s ease; }
+        .review-card:active { transform: scale(0.98); }
+        @keyframes cardPop { 0% { opacity:0; transform:translateY(15px) scale(0.95); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+        .review-text { font-size:1.05rem; line-height:1.4; color:var(--text-primary); font-weight:480; word-break:break-word; flex:1; padding-right:12px; }
+        .copy-btn { background:var(--btn-bg); border:1px solid var(--border-light); border-radius:40px; padding:10px 18px; font-size:0.9rem; font-weight:550; color:var(--text-secondary); backdrop-filter:blur(4px); cursor:pointer; transition:all 0.15s; box-shadow:0 4px 8px var(--shadow-color); display:flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0; }
+        .copy-btn:active { transform:scale(0.92); background:var(--btn-hover); }
+        .copy-btn::after { content:"📋"; font-size:1.1rem; opacity:0.9; }
+        .browser-tip { background:var(--warning-bg); backdrop-filter:blur(5px); border-radius:30px; padding:10px 16px; margin:10px 0 16px; font-size:0.85rem; text-align:center; color:var(--text-primary); border:1px solid var(--border-light); box-shadow:0 4px 10px var(--shadow-color); }
+        .contact-footer { margin-top:16px; text-align:center; padding:18px 10px 10px; border-top:1px solid var(--border-light); color:var(--text-secondary); font-size:0.95rem; backdrop-filter:blur(4px); border-radius:0 0 24px 24px; }
+        .contact-email { background:var(--btn-bg); display:inline-block; padding:8px 28px; border-radius:50px; border:1px solid var(--border-light); margin-top:8px; font-size:0.9rem; color:var(--text-primary); text-decoration:none; box-shadow:0 2px 6px var(--shadow-color); }
+        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.3); backdrop-filter:blur(5px); display:flex; align-items:center; justify-content:center; z-index:1000; transition:opacity 0.2s; opacity:0; pointer-events:none; }
+        .modal-overlay.show { opacity:1; pointer-events:auto; }
+        .modal-glass { background:var(--card-bg); backdrop-filter:blur(30px); border-radius:48px; padding:32px 24px; width:300px; border:1px solid var(--border-light); transform:scale(0.9); transition:transform 0.2s; text-align:center; }
+        .modal-overlay.show .modal-glass { transform:scale(1); }
+        .modal-title { color:var(--text-primary); font-size:1.4rem; margin-bottom:20px; }
+        .app-options { display:flex; flex-direction:column; gap:16px; margin-bottom:16px; }
+        .app-btn { background:var(--btn-bg); border:1px solid var(--border-light); border-radius:60px; padding:16px; font-size:1.25rem; display:flex; align-items:center; justify-content:center; gap:12px; color:var(--text-primary); cursor:pointer; box-shadow:0 6px 12px var(--shadow-color); }
+        .app-btn:active { transform:scale(0.96); }
+        .app-btn .fa-tiktok { color:#000; }
+        @media (prefers-color-scheme:dark) { .app-btn .fa-tiktok { color:#fff; } }
+        .cancel-btn { background:transparent; border:1px solid var(--border-light); border-radius:40px; padding:12px; margin-top:8px; color:var(--text-secondary); cursor:pointer; }
+        .empty-message { text-align:center; padding:30px 0; color:var(--text-secondary); font-style:italic; font-size:1.2rem; }
+        .error-message { text-align:center; padding:20px; color:#ff6b6b; background:var(--error-bg); border-radius:24px; margin:20px 0; font-size:1rem; }
+        .toast-message { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.9); color:white; padding:16px 32px; border-radius:50px; font-size:1.1rem; font-weight:500; z-index:2000; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2); box-shadow:0 10px 30px rgba(0,0,0,0.3); display:none; text-align:center; max-width:90%; line-height:1.4; }
+        .manual-copy-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(5px); display:flex; align-items:center; justify-content:center; z-index:4000; transition:opacity 0.2s; opacity:0; pointer-events:none; }
+        .manual-copy-overlay.show { opacity:1; pointer-events:auto; }
+        .manual-copy-card { background:var(--card-bg); backdrop-filter:blur(30px); border-radius:32px; padding:24px; max-width:340px; width:85%; border:1px solid var(--border-light); text-align:center; }
+        .manual-copy-text { background:var(--btn-bg); border:1px solid var(--border-light); border-radius:20px; padding:16px; margin:16px 0; color:var(--text-primary); word-break:break-word; text-align:left; max-height:200px; overflow-y:auto; user-select:text; -webkit-user-select:text; }
+        .manual-copy-hint { color:var(--text-secondary); font-size:0.95rem; margin-bottom:20px; }
+        .manual-copy-btn { background:var(--guide-btn-bg); border:none; border-radius:40px; padding:12px 24px; color:var(--guide-btn-text); cursor:pointer; }
+        .wechat-guide-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:3000; opacity:0; pointer-events:none; }
+        .wechat-guide-overlay.show { opacity:1; pointer-events:auto; }
+        .wechat-guide-card { background:var(--guide-bg); backdrop-filter:blur(40px); border-radius:48px; padding:36px 28px; max-width:380px; width:85%; border:1px solid var(--guide-border); text-align:center; color:var(--text-primary); animation:guidePop 0.3s ease; }
+        @keyframes guidePop { 0% { transform:scale(0.8); opacity:0; } 100% { transform:scale(1); opacity:1; } }
+        .guide-icon { font-size:80px; animation:arrowBounce 1.2s infinite alternate; }
+        @keyframes arrowBounce { from { transform:translateY(0) rotate(25deg); } to { transform:translateY(-15px) rotate(25deg); } }
+        .guide-dots { font-size:60px; letter-spacing:12px; margin:0 0 15px; }
+        .guide-title { font-size:2.2rem; margin-bottom:20px; }
+        .guide-text { font-size:1.4rem; background:var(--btn-bg); padding:14px 0; border-radius:60px; margin:20px 0 12px; border:1px solid var(--border-light); }
+        .guide-sub { font-size:1.1rem; margin-bottom:28px; }
+        .guide-btn { background:var(--guide-btn-bg); border:none; border-radius:60px; padding:16px 30px; color:var(--guide-btn-text); width:100%; cursor:pointer; }
+        .loading-skeleton { display:flex; flex-direction:column; gap:16px; }
+        .skeleton-card { background:var(--btn-bg); border-radius:28px; height:80px; animation:pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity:0.6; } 50% { opacity:1; } 100% { opacity:0.6; } }
     </style>
 </head>
 <body>
@@ -541,7 +83,7 @@
     <!-- 手动复制弹窗 -->
     <div class="manual-copy-overlay" id="manualCopyOverlay">
         <div class="manual-copy-card">
-            <div style="font-size: 1.3rem; font-weight: 600; margin-bottom: 8px;">📋 复制失败</div>
+            <div style="font-size:1.3rem; font-weight:600; margin-bottom:8px;">📋 复制失败</div>
             <div class="manual-copy-hint">请长按下方文字手动复制</div>
             <div class="manual-copy-text" id="manualCopyText"></div>
             <button class="manual-copy-btn" id="manualCopyCloseBtn">关闭</button>
@@ -607,7 +149,6 @@
             const isAndroid = /android/.test(ua);
             const isHarmony = ua.indexOf('harmony') !== -1;
             
-            // 手机品牌检测（用于复制失败时的引导）
             const phoneBrand = (() => {
                 if (ua.includes('huawei') || ua.includes('honor')) return 'huawei';
                 if (ua.includes('xiaomi') || ua.includes('miui')) return 'xiaomi';
@@ -631,7 +172,6 @@
             const manualCopyText = document.getElementById('manualCopyText');
             const manualCopyCloseBtn = document.getElementById('manualCopyCloseBtn');
 
-            // ================= 增强版 Toast（可设置时长，默认延长至5秒）=================
             function showToast(msg, duration = 5000) {
                 toastMessage.style.display = 'block';
                 toastMessage.textContent = msg;
@@ -655,14 +195,11 @@
                 if (e.target === manualCopyOverlay) hideManualCopy();
             });
 
-            // 微信环境处理
             if (isWeChat) {
                 browserTip.style.display = 'none';
                 setTimeout(showGuide, 300);
                 guideConfirmBtn.addEventListener('click', (e) => { e.stopPropagation(); hideGuide(); });
                 guideOverlay.addEventListener('click', (e) => { if (e.target === guideOverlay) hideGuide(); });
-                // 微信内点击任何按钮都会先弹出引导，但用户点击“我知道了”后不再拦截复制
-                // 我们在下面的事件监听中区分处理
             } else {
                 browserTip.style.display = 'block';
             }
@@ -730,9 +267,8 @@
                 }
             }
 
-            // ================= 终极复制函数（六层保障）=================
+            // ================= 终极复制函数 =================
             function copyTextToClipboard(text) {
-                // 第一层：现代 Clipboard API
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(text).then(() => {
                         console.log('Clipboard API 复制成功');
@@ -745,7 +281,6 @@
             }
 
             function fallbackCopy1(text) {
-                // 第二层：传统 textarea 方法
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
                 textarea.style.position = 'fixed';
@@ -765,7 +300,6 @@
             }
 
             function fallbackCopy2(text) {
-                // 第三层：input 元素（针对部分移动浏览器）
                 const input = document.createElement('input');
                 input.value = text;
                 input.style.position = 'fixed';
@@ -786,10 +320,7 @@
             }
 
             function fallbackCopy3(text) {
-                // 第四层：显示手动复制弹窗 + 品牌引导
                 showManualCopy(text);
-                
-                // 第五层：根据手机品牌给出权限引导（但不阻塞操作）
                 let permissionGuide = '';
                 switch(phoneBrand) {
                     case 'huawei':
@@ -808,27 +339,22 @@
                     default:
                         permissionGuide = '请在手机「设置」中为当前浏览器开启「剪贴板」权限';
                 }
-                
                 setTimeout(() => {
                     showToast('📋 复制失败，已弹出手动复制窗口。' + permissionGuide, 7000);
                 }, 500);
             }
 
-            // ================= 跨平台跳转函数（最终版）=================
+            // ================= 跨平台跳转函数 =================
             function jumpToApp(appName) {
                 const config = appName === 'douyin' ? SHOP_CONFIG.douyin : SHOP_CONFIG.meituan;
-                // 注意：此时文案已经复制，不需要再复制
-                // 根据不同平台构建唤醒序列
                 let sequence = [];
                 
                 if (isIOS) {
-                    // iOS：优先使用 Universal Link + Scheme
                     sequence = [
                         { type: 'universal', url: config.universalLink },
                         { type: 'scheme', url: config.scheme }
                     ];
                 } else if (isAndroid || isHarmony) {
-                    // Android/鸿蒙：优先使用 Intent，失败后用 Universal Link 和 Scheme 兜底
                     sequence = [
                         { type: 'intent', url: config.intent },
                         { type: 'universal', url: config.universalLink },
@@ -838,7 +364,6 @@
                     sequence = [{ type: 'scheme', url: config.scheme }];
                 }
                 
-                // 执行跳转
                 tryOpenApp(sequence, config.fallbackUrl, appName === 'douyin' ? '抖音' : '美团');
             }
 
@@ -911,24 +436,22 @@
                 }, 3000);
             }
 
-            // ================= 商家配置 ==================
+            // ================= 商家配置（美团已移除详情页路径）=================
             const SHOP_CONFIG = {
                 meituan: {
                     name: "美团",
                     package: "com.sankuai.meituan",
-                    universalLink: "https://i.meituan.com/poi/1755904985",
-                    intent: "intent://poi/1755904985#Intent;scheme=imeituan;package=com.sankuai.meituan;launchFlags=0x34000000;end;",
-                    schemePath: "imeituan://www.meituan.com/poi/1755904985",
-                    schemeShop: "imeituan://www.meituan.com/shop/1755904985",
-                    schemeParam: "imeituan://www.meituan.com/poi?id=1755904985",
-                    homeScheme: "imeituan://",
+                    // Universal Link 不带路径，仅用于唤醒APP
+                    universalLink: "https://i.meituan.com/",
+                    // Intent 不带路径，仅包含scheme和package
+                    intent: "intent://#Intent;scheme=imeituan;package=com.sankuai.meituan;launchFlags=0x34000000;end;",
+                    // Scheme 不带路径
                     scheme: "imeituan://",
                     fallbackUrl: "http://dpurl.cn/rYQkSEfz"
                 },
                 douyin: {
                     name: "抖音",
                     universalLink: "https://www.douyin.com/",
-                    // 纯应用启动 Intent，不带任何页面路径
                     intent: "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.ss.android.ugc.aweme;launchFlags=0x34000000;end;",
                     scheme: "snssdk1128://",
                     fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
@@ -950,7 +473,6 @@
                 });
                 reviewsContainer.innerHTML = htmlStr;
 
-                // 库存预警（延长显示时间）
                 const len = reviews.length;
                 if (len === 20) showToast('📢 库存剩余 20 条', 5000);
                 else if (len === 10) showToast('📢 库存剩余 10 条', 5000);
@@ -996,25 +518,20 @@
             function hideModal() { modalOverlay.classList.remove('show'); selectedReviewId = null; }
             function showModal(id) { selectedReviewId = id; modalOverlay.classList.add('show'); }
 
-            // ================= 事件绑定（区分微信和非微信）=================
+            // ================= 事件绑定 =================
             if (!isWeChat) {
-                // 非微信环境：点击复制 → 复制文案 + 弹出APP选择框
+                // 非微信环境：点击复制按钮只记录ID并弹出模态框
                 reviewsContainer.addEventListener('click', (e) => {
                     const copyBtn = e.target.closest('.copy-btn');
                     if (!copyBtn) return;
                     const id = copyBtn.getAttribute('data-id');
                     if (id) {
-                        // 先复制文案
-                        const review = currentReviews.find(r => r.id === id);
-                        if (review) {
-                            copyTextToClipboard(review.text);
-                        }
-                        // 再弹出模态框，让用户选择APP
+                        selectedReviewId = id;
                         showModal(id);
                     }
                 });
             } else {
-                // 微信环境：点击复制 → 复制文案 + 删除库存 + 提示成功，不弹框
+                // 微信环境：点击复制按钮 → 复制文案 + 删除库存 + 提示成功
                 reviewsContainer.addEventListener('click', async (e) => {
                     const copyBtn = e.target.closest('.copy-btn');
                     if (!copyBtn) return;
@@ -1022,26 +539,27 @@
                     if (id) {
                         const review = currentReviews.find(r => r.id === id);
                         if (review) {
-                            // 复制文案
                             copyTextToClipboard(review.text);
-                            // 从云端删除该条好评（减少库存）
                             const deleteSuccess = await deleteReviewById(id);
                             if (deleteSuccess) {
-                                showToast('✅ 复制成功', 2000);
-                                // 重新加载列表，让被删除的条目不显示
+                                showToast('✅ 复制成功，库存已减少', 2000);
                                 await loadAndRender(false);
                             } else {
-                                showToast('✅ 复制成功', 2000);
+                                showToast('✅ 复制成功，但库存更新失败', 2000);
                             }
                         }
                     }
                 });
             }
 
-            // 模态框内平台选择（非微信环境）
             chooseDouyin.addEventListener('click', async () => {
                 if (!selectedReviewId) { hideModal(); return; }
-                // 复制已经在点击按钮时完成，这里只执行删除和跳转
+                const review = currentReviews.find(r => r.id === selectedReviewId);
+                if (review) {
+                    copyTextToClipboard(review.text);
+                } else {
+                    showToast('⚠️ 未找到评论文本', 2000);
+                }
                 const deleteSuccess = await deleteReviewById(selectedReviewId);
                 if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
                 hideModal();
@@ -1051,6 +569,12 @@
 
             chooseMeituan.addEventListener('click', async () => {
                 if (!selectedReviewId) { hideModal(); return; }
+                const review = currentReviews.find(r => r.id === selectedReviewId);
+                if (review) {
+                    copyTextToClipboard(review.text);
+                } else {
+                    showToast('⚠️ 未找到评论文本', 2000);
+                }
                 const deleteSuccess = await deleteReviewById(selectedReviewId);
                 if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
                 hideModal();
