@@ -12,7 +12,7 @@
     <!-- 腾讯云 Cloudbase SDK (使用官方最新版) -->
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
     <style>
-        /* 完整样式（与之前一致，为节省篇幅已合并） */
+        /* ====== 完整样式 ====== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
         :root { --bg-color: #f5f7fa; --card-bg: rgba(255, 255, 255, 0.6); --text-primary: #1e2a3a; --text-secondary: #2c3e50; --border-light: rgba(255, 255, 255, 0.3); --shadow-color: rgba(0, 0, 0, 0.08); --btn-bg: rgba(255, 255, 255, 0.7); --btn-hover: rgba(255, 255, 255, 0.9); --warning-bg: rgba(255, 230, 200, 0.7); --guide-bg: rgba(255, 255, 255, 0.7); --guide-border: rgba(0, 0, 0, 0.2); --guide-btn-bg: #2c3e50; --guide-btn-text: #ffffff; --error-bg: rgba(255, 100, 100, 0.2); --manual-copy-bg: rgba(0, 0, 0, 0.8); }
         @media (prefers-color-scheme: dark) { :root { --bg-color: #121212; --card-bg: rgba(40, 40, 40, 0.7); --text-primary: #f0f0f0; --text-secondary: #cccccc; --border-light: rgba(255, 255, 255, 0.1); --shadow-color: rgba(0, 0, 0, 0.5); --btn-bg: rgba(60, 60, 60, 0.7); --btn-hover: rgba(80, 80, 80, 0.9); --warning-bg: rgba(80, 60, 30, 0.7); --guide-bg: rgba(40, 40, 40, 0.8); --guide-border: rgba(255, 255, 255, 0.2); --guide-btn-bg: #cccccc; --guide-btn-text: #121212; --error-bg: rgba(180, 60, 60, 0.4); --manual-copy-bg: rgba(30, 30, 30, 0.95); } }
@@ -80,7 +80,7 @@
         </div>
     </div>
 
-    <!-- 手动复制弹窗 -->
+    <!-- 手动复制弹窗（非小米备用） -->
     <div class="manual-copy-overlay" id="manualCopyOverlay">
         <div class="manual-copy-card">
             <div style="font-size:1.3rem; font-weight:600; margin-bottom:8px;">📋 复制失败</div>
@@ -134,7 +134,7 @@
             console.log(`当前使用的集合: ${COLLECTION_NAME}`);
 
             const CACHE_KEY = `reviews_cache_${COLLECTION_NAME}`;
-            const CACHE_EXPIRE = 5 * 60 * 1000;
+            const CACHE_EXPIRE = 5 * 60 * 1000; // 5分钟缓存
 
             let currentReviews = [];
             let selectedReviewId = null;
@@ -149,6 +149,7 @@
             const isAndroid = /android/.test(ua);
             const isHarmony = ua.indexOf('harmony') !== -1;
             
+            // 手机品牌检测（用于引导提示）
             const phoneBrand = (() => {
                 if (ua.includes('huawei') || ua.includes('honor')) return 'huawei';
                 if (ua.includes('xiaomi') || ua.includes('miui')) return 'xiaomi';
@@ -158,6 +159,10 @@
                 return 'other';
             })();
 
+            // 检测小米浏览器（特殊处理）
+            const isMiBrowser = ua.includes('miui') || ua.includes('xiaomi') || (ua.includes('mi ') && ua.includes('browser'));
+
+            // DOM 元素
             const reviewsContainer = document.getElementById('reviewsContainer');
             const loadingSkeleton = document.getElementById('loadingSkeleton');
             const modalOverlay = document.getElementById('appChoiceModal');
@@ -172,6 +177,7 @@
             const manualCopyText = document.getElementById('manualCopyText');
             const manualCopyCloseBtn = document.getElementById('manualCopyCloseBtn');
 
+            // ================= 工具函数 =================
             function showToast(msg, duration = 5000) {
                 toastMessage.style.display = 'block';
                 toastMessage.textContent = msg;
@@ -195,15 +201,18 @@
                 if (e.target === manualCopyOverlay) hideManualCopy();
             });
 
+            // 微信环境处理
             if (isWeChat) {
                 browserTip.style.display = 'none';
                 setTimeout(showGuide, 300);
                 guideConfirmBtn.addEventListener('click', (e) => { e.stopPropagation(); hideGuide(); });
                 guideOverlay.addEventListener('click', (e) => { if (e.target === guideOverlay) hideGuide(); });
+                // 微信内点击任何按钮都会先弹出引导，但用户点击“我知道了”后不再拦截复制
             } else {
                 browserTip.style.display = 'block';
             }
 
+            // 缓存操作
             function getCachedReviews() {
                 try {
                     const cached = localStorage.getItem(CACHE_KEY);
@@ -226,6 +235,7 @@
 
             function clearCache() { localStorage.removeItem(CACHE_KEY); }
 
+            // 云初始化
             async function initCloud() {
                 try {
                     const app = cloudbase.init({ env: CLOUD_ENV });
@@ -241,6 +251,7 @@
                 }
             }
 
+            // 获取所有好评
             async function fetchAllReviews() {
                 if (!isCloudReady) return [];
                 try {
@@ -254,6 +265,7 @@
                 }
             }
 
+            // 根据id删除好评
             async function deleteReviewById(id) {
                 if (!isCloudReady || !id) return false;
                 try {
@@ -267,456 +279,313 @@
                 }
             }
 
-<script>
-    (function() {
-        // ================= 腾讯云 Cloudbase 配置 =================
-        const CLOUD_ENV = 'good-reviews-3g35hh0i28b88e1b';
-        const DEFAULT_COLLECTION = 'CS1';
-        const urlParams = new URLSearchParams(window.location.search);
-        const COLLECTION_NAME = urlParams.get('collection') || DEFAULT_COLLECTION;
-        
-        console.log(`当前使用的集合: ${COLLECTION_NAME}`);
-
-        const CACHE_KEY = `reviews_cache_${COLLECTION_NAME}`;
-        const CACHE_EXPIRE = 5 * 60 * 1000;
-
-        let currentReviews = [];
-        let selectedReviewId = null;
-        let db = null;
-        let collection = null;
-        let isCloudReady = false;
-        let cloudInitError = null;
-
-        const ua = navigator.userAgent.toLowerCase();
-        const isWeChat = ua.indexOf('micromessenger') !== -1;
-        const isIOS = /iphone|ipad|ipod/.test(ua);
-        const isAndroid = /android/.test(ua);
-        const isHarmony = ua.indexOf('harmony') !== -1;
-        
-        // 手机品牌检测（仅用于引导提示）
-        const phoneBrand = (() => {
-            if (ua.includes('huawei') || ua.includes('honor')) return 'huawei';
-            if (ua.includes('xiaomi') || ua.includes('miui')) return 'xiaomi';
-            if (ua.includes('oppo') || ua.includes('coloros')) return 'oppo';
-            if (ua.includes('vivo') || ua.includes('funtouch')) return 'vivo';
-            if (ua.includes('samsung')) return 'samsung';
-            return 'other';
-        })();
-
-        // 检测小米浏览器
-        const isMiBrowser = ua.includes('miui') || ua.includes('xiaomi') || (ua.includes('mi ') && ua.includes('browser'));
-
-        const reviewsContainer = document.getElementById('reviewsContainer');
-        const loadingSkeleton = document.getElementById('loadingSkeleton');
-        const modalOverlay = document.getElementById('appChoiceModal');
-        const closeModalBtn = document.getElementById('closeModal');
-        const chooseDouyin = document.getElementById('chooseDouyin');
-        const chooseMeituan = document.getElementById('chooseMeituan');
-        const browserTip = document.getElementById('browserTip');
-        const toastMessage = document.getElementById('toastMessage');
-        const guideOverlay = document.getElementById('wechatGuideOverlay');
-        const guideConfirmBtn = document.getElementById('guideConfirmBtn');
-        const manualCopyOverlay = document.getElementById('manualCopyOverlay');
-        const manualCopyText = document.getElementById('manualCopyText');
-        const manualCopyCloseBtn = document.getElementById('manualCopyCloseBtn');
-
-        function showToast(msg, duration = 5000) {
-            toastMessage.style.display = 'block';
-            toastMessage.textContent = msg;
-            setTimeout(() => {
-                toastMessage.style.display = 'none';
-            }, duration);
-        }
-
-        function showGuide() { guideOverlay.classList.add('show'); }
-        function hideGuide() { guideOverlay.classList.remove('show'); }
-
-        function showManualCopy(text) {
-            manualCopyText.textContent = text;
-            manualCopyOverlay.classList.add('show');
-        }
-        function hideManualCopy() {
-            manualCopyOverlay.classList.remove('show');
-        }
-        manualCopyCloseBtn.addEventListener('click', hideManualCopy);
-        manualCopyOverlay.addEventListener('click', (e) => {
-            if (e.target === manualCopyOverlay) hideManualCopy();
-        });
-
-        if (isWeChat) {
-            browserTip.style.display = 'none';
-            setTimeout(showGuide, 300);
-            guideConfirmBtn.addEventListener('click', (e) => { e.stopPropagation(); hideGuide(); });
-            guideOverlay.addEventListener('click', (e) => { if (e.target === guideOverlay) hideGuide(); });
-        } else {
-            browserTip.style.display = 'block';
-        }
-
-        function getCachedReviews() {
-            try {
-                const cached = localStorage.getItem(CACHE_KEY);
-                if (!cached) return null;
-                const data = JSON.parse(cached);
-                if (Date.now() - data.timestamp > CACHE_EXPIRE) {
-                    localStorage.removeItem(CACHE_KEY);
-                    return null;
-                }
-                return data.reviews;
-            } catch (e) { return null; }
-        }
-
-        function setCachedReviews(reviews) {
-            try {
-                const cacheData = { reviews, timestamp: Date.now() };
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-            } catch (e) {}
-        }
-
-        function clearCache() { localStorage.removeItem(CACHE_KEY); }
-
-        async function initCloud() {
-            try {
-                const app = cloudbase.init({ env: CLOUD_ENV });
-                await app.auth().signInAnonymously();
-                db = app.database();
-                collection = db.collection(COLLECTION_NAME);
-                isCloudReady = true;
-                console.log(`✅ 云数据库初始化成功，集合: ${COLLECTION_NAME}`);
-            } catch (err) {
-                console.error('❌ 云数据库初始化失败', err);
-                cloudInitError = err.message || '请检查环境ID或匿名登录是否开启';
-                isCloudReady = false;
-            }
-        }
-
-        async function fetchAllReviews() {
-            if (!isCloudReady) return [];
-            try {
-                const res = await collection.get();
-                const docs = res.data || [];
-                return docs.map(doc => ({ id: doc._id, text: doc.text }));
-            } catch (err) {
-                console.error('拉取数据失败', err);
-                showToast('数据拉取失败: ' + (err.message || ''), 3000);
-                return [];
-            }
-        }
-
-        async function deleteReviewById(id) {
-            if (!isCloudReady || !id) return false;
-            try {
-                await collection.doc(id).remove();
-                clearCache();
-                return true;
-            } catch (err) {
-                console.error('删除失败', err);
-                showToast('删除失败：' + (err.message || ''), 2000);
-                return false;
-            }
-        }
-
-        // ================= 复制函数 =================
-        function copyTextToClipboard(text, callback) {
-            if (isMiBrowser) {
-                // 小米浏览器：弹出手动复制引导
-                showMiBrowserCopyGuide(text, callback);
-            } else {
-                // 其他浏览器：尝试自动复制
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        console.log('Clipboard API 复制成功');
-                        if (callback) callback(true);
-                    }).catch(() => {
-                        fallbackCopy(text, callback);
-                    });
+            // ================= 终极复制函数（小米浏览器专用版）=================
+            function copyTextToClipboard(text, callback) {
+                if (isMiBrowser) {
+                    // 小米浏览器：弹出手动复制引导
+                    showMiBrowserCopyGuide(text, callback);
                 } else {
-                    fallbackCopy(text, callback);
+                    // 其他浏览器：尝试自动复制
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            console.log('Clipboard API 复制成功');
+                            if (callback) callback(true);
+                        }).catch(() => {
+                            fallbackCopy(text, callback);
+                        });
+                    } else {
+                        fallbackCopy(text, callback);
+                    }
                 }
             }
-        }
 
-        // 统一的备用复制函数（非小米浏览器）
-        function fallbackCopy(text, callback) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            textarea.setSelectionRange(0, 99999);
-            try {
-                const success = document.execCommand('copy');
+            // 统一的备用复制函数（非小米浏览器）
+            function fallbackCopy(text, callback) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                textarea.setSelectionRange(0, 99999);
+                try {
+                    const success = document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    if (success) {
+                        console.log('传统复制成功');
+                        if (callback) callback(true);
+                        return;
+                    }
+                } catch (err) {}
                 document.body.removeChild(textarea);
-                if (success) {
-                    console.log('传统复制成功');
-                    if (callback) callback(true);
-                    return;
-                }
-            } catch (err) {}
-            document.body.removeChild(textarea);
-            
-            // 最后尝试 input 方式
-            const input = document.createElement('input');
-            input.value = text;
-            input.style.position = 'fixed';
-            input.style.opacity = '0';
-            document.body.appendChild(input);
-            input.focus();
-            input.select();
-            input.setSelectionRange(0, 99999);
-            try {
-                const success = document.execCommand('copy');
+                
+                // 最后尝试 input 方式
+                const input = document.createElement('input');
+                input.value = text;
+                input.style.position = 'fixed';
+                input.style.opacity = '0';
+                document.body.appendChild(input);
+                input.focus();
+                input.select();
+                input.setSelectionRange(0, 99999);
+                try {
+                    const success = document.execCommand('copy');
+                    document.body.removeChild(input);
+                    if (success) {
+                        console.log('input复制成功');
+                        if (callback) callback(true);
+                        return;
+                    }
+                } catch (err) {}
                 document.body.removeChild(input);
-                if (success) {
-                    console.log('input复制成功');
-                    if (callback) callback(true);
-                    return;
-                }
-            } catch (err) {}
-            document.body.removeChild(input);
-            
-            // 全失败，弹出手动复制框（非小米）
-            showManualCopy(text);
-            if (callback) callback(false);
-        }
-
-        // 小米浏览器手动复制引导
-        function showMiBrowserCopyGuide(text, callback) {
-            const guideDiv = document.createElement('div');
-            guideDiv.id = 'miCopyGuide';
-            guideDiv.style.cssText = `
-                position:fixed; top:0; left:0; width:100%; height:100%;
-                background:rgba(0,0,0,0.7); backdrop-filter:blur(5px);
-                display:flex; align-items:center; justify-content:center;
-                z-index:5000;
-            `;
-            
-            guideDiv.innerHTML = `
-                <div style="background:var(--card-bg, white); backdrop-filter:blur(20px);
-                            border-radius:32px; padding:28px; max-width:340px; width:85%;
-                            border:1px solid rgba(255,255,255,0.2); text-align:center;">
-                    <div style="font-size:1.4rem; font-weight:600; margin-bottom:12px;">📋 复制文案</div>
-                    <div style="color:var(--text-secondary, #666); font-size:1rem; margin-bottom:20px;">
-                        由于小米浏览器限制，请长按下方文字手动复制：
-                    </div>
-                    <div style="background:var(--btn-bg, #f5f5f5); border:1px solid var(--border-light, #eee);
-                                border-radius:16px; padding:20px; margin-bottom:20px;
-                                font-size:1.1rem; color:var(--text-primary, #333);
-                                word-break:break-word; text-align:left; line-height:1.5;
-                                user-select:text; -webkit-user-select:text;">
-                        ${text}
-                    </div>
-                    <div style="color:var(--text-secondary, #666); font-size:0.9rem; margin-bottom:24px;">
-                        ⚡ 长按上方文字区域即可复制
-                    </div>
-                    <button onclick="document.getElementById('miCopyGuide').remove(); window.handleMiCopyNext && window.handleMiCopyNext();"
-                            style="background:#2196F3; border:none; border-radius:60px;
-                                   padding:14px 24px; color:white; font-size:1.1rem;
-                                   font-weight:600; cursor:pointer; width:100%;
-                                   border:1px solid rgba(255,255,255,0.2);">
-                        我已复制，下一步 →
-                    </button>
-                </div>
-            `;
-            document.body.appendChild(guideDiv);
-            
-            window.handleMiCopyNext = () => {
-                if (callback) callback(true);
-            };
-        }
-
-        // ================= 跳转函数 =================
-        function jumpToApp(appName) {
-            const config = appName === 'douyin' ? SHOP_CONFIG.douyin : SHOP_CONFIG.meituan;
-            let sequence = [];
-            
-            if (isIOS) {
-                sequence = [
-                    { type: 'universal', url: config.universalLink },
-                    { type: 'scheme', url: config.scheme }
-                ];
-            } else if (isAndroid || isHarmony) {
-                sequence = [
-                    { type: 'intent', url: config.intent },
-                    { type: 'universal', url: config.universalLink },
-                    { type: 'scheme', url: config.scheme }
-                ];
-            } else {
-                sequence = [{ type: 'scheme', url: config.scheme }];
+                
+                // 全失败，弹出手动复制框（非小米）
+                showManualCopy(text);
+                if (callback) callback(false);
             }
-            
-            tryOpenApp(sequence, config.fallbackUrl, appName === 'douyin' ? '抖音' : '美团');
-        }
 
-        function tryOpenApp(sequence, fallbackUrl, appName) {
-            let appLaunched = false;
+            // 小米浏览器手动复制引导
+            function showMiBrowserCopyGuide(text, callback) {
+                const guideDiv = document.createElement('div');
+                guideDiv.id = 'miCopyGuide';
+                guideDiv.style.cssText = `
+                    position:fixed; top:0; left:0; width:100%; height:100%;
+                    background:rgba(0,0,0,0.7); backdrop-filter:blur(5px);
+                    display:flex; align-items:center; justify-content:center;
+                    z-index:5000;
+                `;
+                
+                guideDiv.innerHTML = `
+                    <div style="background:var(--card-bg, white); backdrop-filter:blur(20px);
+                                border-radius:32px; padding:28px; max-width:340px; width:85%;
+                                border:1px solid rgba(255,255,255,0.2); text-align:center;">
+                        <div style="font-size:1.4rem; font-weight:600; margin-bottom:12px;">📋 复制文案</div>
+                        <div style="color:var(--text-secondary, #666); font-size:1rem; margin-bottom:20px;">
+                            由于小米浏览器限制，请长按下方文字手动复制：
+                        </div>
+                        <div style="background:var(--btn-bg, #f5f5f5); border:1px solid var(--border-light, #eee);
+                                    border-radius:16px; padding:20px; margin-bottom:20px;
+                                    font-size:1.1rem; color:var(--text-primary, #333);
+                                    word-break:break-word; text-align:left; line-height:1.5;
+                                    user-select:text; -webkit-user-select:text;">
+                            ${text}
+                        </div>
+                        <div style="color:var(--text-secondary, #666); font-size:0.9rem; margin-bottom:24px;">
+                            ⚡ 长按上方文字区域即可复制
+                        </div>
+                        <button onclick="document.getElementById('miCopyGuide').remove(); window.handleMiCopyNext && window.handleMiCopyNext();"
+                                style="background:#2196F3; border:none; border-radius:60px;
+                                       padding:14px 24px; color:white; font-size:1.1rem;
+                                       font-weight:600; cursor:pointer; width:100%;
+                                       border:1px solid rgba(255,255,255,0.2);">
+                            我已复制，下一步 →
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(guideDiv);
+                
+                window.handleMiCopyNext = () => {
+                    if (callback) callback(true);
+                };
+            }
 
-            const visibilityHandler = function() {
-                if (document.hidden) {
+            // ================= 跨平台跳转函数 =================
+            function jumpToApp(appName) {
+                const config = appName === 'douyin' ? SHOP_CONFIG.douyin : SHOP_CONFIG.meituan;
+                let sequence = [];
+                
+                if (isIOS) {
+                    sequence = [
+                        { type: 'universal', url: config.universalLink },
+                        { type: 'scheme', url: config.scheme }
+                    ];
+                } else if (isAndroid || isHarmony) {
+                    sequence = [
+                        { type: 'intent', url: config.intent },
+                        { type: 'universal', url: config.universalLink },
+                        { type: 'scheme', url: config.scheme }
+                    ];
+                } else {
+                    sequence = [{ type: 'scheme', url: config.scheme }];
+                }
+                
+                tryOpenApp(sequence, config.fallbackUrl, appName === 'douyin' ? '抖音' : '美团');
+            }
+
+            function tryOpenApp(sequence, fallbackUrl, appName) {
+                let appLaunched = false;
+
+                const visibilityHandler = function() {
+                    if (document.hidden) {
+                        appLaunched = true;
+                        cleanUp();
+                        showToast(`✅ ${appName}APP已打开`, 2000);
+                    }
+                };
+                const blurHandler = function() {
                     appLaunched = true;
                     cleanUp();
                     showToast(`✅ ${appName}APP已打开`, 2000);
+                };
+
+                function cleanUp() {
+                    document.removeEventListener('visibilitychange', visibilityHandler);
+                    window.removeEventListener('blur', blurHandler);
+                    if (window._appJumpTimer) clearTimeout(window._appJumpTimer);
                 }
-            };
-            const blurHandler = function() {
-                appLaunched = true;
-                cleanUp();
-                showToast(`✅ ${appName}APP已打开`, 2000);
-            };
 
-            function cleanUp() {
-                document.removeEventListener('visibilitychange', visibilityHandler);
-                window.removeEventListener('blur', blurHandler);
-                if (window._appJumpTimer) clearTimeout(window._appJumpTimer);
-            }
+                document.addEventListener('visibilitychange', visibilityHandler);
+                window.addEventListener('blur', blurHandler);
 
-            document.addEventListener('visibilitychange', visibilityHandler);
-            window.addEventListener('blur', blurHandler);
-
-            function tryNext(index) {
-                if (appLaunched || index >= sequence.length) return;
-                const item = sequence[index];
-                
-                if (item.type === 'universal') {
-                    const link = document.createElement('a');
-                    link.href = item.url;
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    setTimeout(() => document.body.removeChild(link), 100);
-                } else if (item.type === 'intent') {
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    iframe.src = item.url;
-                    document.body.appendChild(iframe);
-                    setTimeout(() => document.body.removeChild(iframe), 100);
-                } else {
-                    if (isAndroid || isHarmony) {
+                function tryNext(index) {
+                    if (appLaunched || index >= sequence.length) return;
+                    const item = sequence[index];
+                    
+                    if (item.type === 'universal') {
+                        const link = document.createElement('a');
+                        link.href = item.url;
+                        link.style.display = 'none';
+                        document.body.appendChild(link);
+                        link.click();
+                        setTimeout(() => document.body.removeChild(link), 100);
+                    } else if (item.type === 'intent') {
                         const iframe = document.createElement('iframe');
                         iframe.style.display = 'none';
                         iframe.src = item.url;
                         document.body.appendChild(iframe);
                         setTimeout(() => document.body.removeChild(iframe), 100);
                     } else {
-                        window.location.href = item.url;
+                        if (isAndroid || isHarmony) {
+                            const iframe = document.createElement('iframe');
+                            iframe.style.display = 'none';
+                            iframe.src = item.url;
+                            document.body.appendChild(iframe);
+                            setTimeout(() => document.body.removeChild(iframe), 100);
+                        } else {
+                            window.location.href = item.url;
+                        }
                     }
+                    
+                    setTimeout(() => tryNext(index + 1), 400);
                 }
+
+                tryNext(0);
                 
-                setTimeout(() => tryNext(index + 1), 400);
+                window._appJumpTimer = setTimeout(() => {
+                    if (!appLaunched) {
+                        cleanUp();
+                        if (confirm(`未成功唤起${appName}APP，是否前往网页版查看？`)) {
+                            window.location.href = fallbackUrl;
+                        }
+                    }
+                }, 3000);
             }
 
-            tryNext(0);
-            
-            window._appJumpTimer = setTimeout(() => {
-                if (!appLaunched) {
-                    cleanUp();
-                    if (confirm(`未成功唤起${appName}APP，是否前往网页版查看？`)) {
-                        window.location.href = fallbackUrl;
-                    }
+            // ================= 商家配置 =================
+            const SHOP_CONFIG = {
+                meituan: {
+                    name: "美团",
+                    package: "com.sankuai.meituan",
+                    universalLink: "https://i.meituan.com/",
+                    intent: "intent://#Intent;scheme=imeituan;package=com.sankuai.meituan;launchFlags=0x34000000;end;",
+                    scheme: "imeituan://",
+                    fallbackUrl: "http://dpurl.cn/rYQkSEfz"
+                },
+                douyin: {
+                    name: "抖音",
+                    universalLink: "https://www.douyin.com/",
+                    intent: "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.ss.android.ugc.aweme;launchFlags=0x34000000;end;",
+                    scheme: "snssdk1128://",
+                    fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
                 }
-            }, 3000);
-        }
+            };
 
-        // ================= 商家配置 =================
-        const SHOP_CONFIG = {
-            meituan: {
-                name: "美团",
-                package: "com.sankuai.meituan",
-                universalLink: "https://i.meituan.com/",
-                intent: "intent://#Intent;scheme=imeituan;package=com.sankuai.meituan;launchFlags=0x34000000;end;",
-                scheme: "imeituan://",
-                fallbackUrl: "http://dpurl.cn/rYQkSEfz"
-            },
-            douyin: {
-                name: "抖音",
-                universalLink: "https://www.douyin.com/",
-                intent: "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.ss.android.ugc.aweme;launchFlags=0x34000000;end;",
-                scheme: "snssdk1128://",
-                fallbackUrl: "https://v.douyin.com/xVZOcGCPqIY/"
-            }
-        };
-
-        function renderReviewsFromData(reviews) {
-            if (!reviews || reviews.length === 0) {
-                reviewsContainer.innerHTML = '<div class="empty-message">✨ 所有好评已被用完，请联系管理员添加~</div>';
-                return;
-            }
-
-            let listToShow = reviews.length <= 5 ? reviews : 
-                (() => { const s = [...reviews]; for(let i=s.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [s[i],s[j]]=[s[j],s[i]]; } return s.slice(0,5); })();
-
-            let htmlStr = '';
-            listToShow.forEach(item => {
-                htmlStr += `<div class="review-card"><span class="review-text">${item.text}</span><button class="copy-btn" data-id="${item.id}">复制</button></div>`;
-            });
-            reviewsContainer.innerHTML = htmlStr;
-
-            const len = reviews.length;
-            if (len === 20) showToast('📢 库存剩余 20 条', 5000);
-            else if (len === 10) showToast('📢 库存剩余 10 条', 5000);
-            else if (len === 5) showToast('📢 库存只剩 5 条啦！', 5000);
-        }
-
-        async function loadAndRender(useCache = true) {
-            if (loadingSkeleton) loadingSkeleton.style.display = 'none';
-
-            if (useCache) {
-                const cached = getCachedReviews();
-                if (cached) {
-                    currentReviews = cached;
-                    renderReviewsFromData(cached);
-                    if (isCloudReady) {
-                        fetchAllReviews().then(fresh => {
-                            if (fresh && fresh.length && JSON.stringify(fresh) !== JSON.stringify(currentReviews)) {
-                                currentReviews = fresh;
-                                setCachedReviews(fresh);
-                                renderReviewsFromData(fresh);
-                            }
-                        }).catch(e => {});
-                    }
+            // ================= 渲染好评列表 =================
+            function renderReviewsFromData(reviews) {
+                if (!reviews || reviews.length === 0) {
+                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 所有好评已被用完，请联系管理员添加~</div>';
                     return;
                 }
+
+                // 随机取5条，如果不足5条则全部显示
+                let listToShow = reviews.length <= 5 ? reviews : 
+                    (() => { const s = [...reviews]; for(let i=s.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [s[i],s[j]]=[s[j],s[i]]; } return s.slice(0,5); })();
+
+                let htmlStr = '';
+                listToShow.forEach(item => {
+                    htmlStr += `<div class="review-card"><span class="review-text">${item.text}</span><button class="copy-btn" data-id="${item.id}">复制</button></div>`;
+                });
+                reviewsContainer.innerHTML = htmlStr;
+
+                // 库存预警
+                const len = reviews.length;
+                if (len === 20) showToast('📢 库存剩余 20 条', 5000);
+                else if (len === 10) showToast('📢 库存剩余 10 条', 5000);
+                else if (len === 5) showToast('📢 库存只剩 5 条啦！', 5000);
             }
 
-            if (!isCloudReady) {
-                reviewsContainer.innerHTML = `<div class="error-message">❌ 数据库初始化失败：${cloudInitError || '未知错误'}<br>请检查：<br>1. 环境ID是否正确<br>2. 匿名登录是否开启<br>3. 集合 ${COLLECTION_NAME} 是否存在</div>`;
-                return;
-            }
+            async function loadAndRender(useCache = true) {
+                if (loadingSkeleton) loadingSkeleton.style.display = 'none';
 
-            const reviews = await fetchAllReviews();
-            if (!reviews.length) {
-                reviewsContainer.innerHTML = '<div class="empty-message">✨ 暂无好评数据，请联系管理员添加</div>';
-            } else {
-                currentReviews = reviews;
-                setCachedReviews(reviews);
-                renderReviewsFromData(reviews);
-            }
-        }
-
-        function hideModal() { modalOverlay.classList.remove('show'); selectedReviewId = null; }
-        function showModal(id) { selectedReviewId = id; modalOverlay.classList.add('show'); }
-
-        // ================= 事件绑定 =================
-        if (!isWeChat) {
-            reviewsContainer.addEventListener('click', (e) => {
-                const copyBtn = e.target.closest('.copy-btn');
-                if (!copyBtn) return;
-                const id = copyBtn.getAttribute('data-id');
-                if (id) {
-                    selectedReviewId = id;
-                    showModal(id);
+                if (useCache) {
+                    const cached = getCachedReviews();
+                    if (cached) {
+                        currentReviews = cached;
+                        renderReviewsFromData(cached);
+                        if (isCloudReady) {
+                            fetchAllReviews().then(fresh => {
+                                if (fresh && fresh.length && JSON.stringify(fresh) !== JSON.stringify(currentReviews)) {
+                                    currentReviews = fresh;
+                                    setCachedReviews(fresh);
+                                    renderReviewsFromData(fresh);
+                                }
+                            }).catch(e => {});
+                        }
+                        return;
+                    }
                 }
-            });
-        } else {
-            reviewsContainer.addEventListener('click', async (e) => {
-                const copyBtn = e.target.closest('.copy-btn');
-                if (!copyBtn) return;
-                const id = copyBtn.getAttribute('data-id');
-                if (id) {
-                    const review = currentReviews.find(r => r.id === id);
-                    if (review) {
-                        copyTextToClipboard(review.text, async (success) => {
-                            if (success) {
+
+                if (!isCloudReady) {
+                    reviewsContainer.innerHTML = `<div class="error-message">❌ 数据库初始化失败：${cloudInitError || '未知错误'}<br>请检查：<br>1. 环境ID是否正确<br>2. 匿名登录是否开启<br>3. 集合 ${COLLECTION_NAME} 是否存在</div>`;
+                    return;
+                }
+
+                const reviews = await fetchAllReviews();
+                if (!reviews.length) {
+                    reviewsContainer.innerHTML = '<div class="empty-message">✨ 暂无好评数据，请联系管理员添加</div>';
+                } else {
+                    currentReviews = reviews;
+                    setCachedReviews(reviews);
+                    renderReviewsFromData(reviews);
+                }
+            }
+
+            // ================= 模态框控制 =================
+            function hideModal() { modalOverlay.classList.remove('show'); selectedReviewId = null; }
+            function showModal(id) { selectedReviewId = id; modalOverlay.classList.add('show'); }
+
+            // ================= 事件绑定 =================
+            if (!isWeChat) {
+                // 非微信环境：点击复制按钮只记录ID并弹出模态框
+                reviewsContainer.addEventListener('click', (e) => {
+                    const copyBtn = e.target.closest('.copy-btn');
+                    if (!copyBtn) return;
+                    const id = copyBtn.getAttribute('data-id');
+                    if (id) {
+                        selectedReviewId = id;
+                        showModal(id);
+                    }
+                });
+            } else {
+                // 微信环境：点击复制按钮 → 复制文案 + 删除库存 + 提示成功
+                reviewsContainer.addEventListener('click', async (e) => {
+                    const copyBtn = e.target.closest('.copy-btn');
+                    if (!copyBtn) return;
+                    const id = copyBtn.getAttribute('data-id');
+                    if (id) {
+                        const review = currentReviews.find(r => r.id === id);
+                        if (review) {
+                            copyTextToClipboard(review.text, async (success) => {
                                 const deleteSuccess = await deleteReviewById(id);
                                 if (deleteSuccess) {
                                     showToast('✅ 复制成功', 2000);
@@ -724,65 +593,68 @@
                                 } else {
                                     showToast('✅ 复制成功', 2000);
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
+                });
+            }
+
+            // 抖音按钮点击
+            chooseDouyin.addEventListener('click', async () => {
+                if (!selectedReviewId) { hideModal(); return; }
+                const review = currentReviews.find(r => r.id === selectedReviewId);
+                if (review) {
+                    copyTextToClipboard(review.text, async (success) => {
+                        const deleteSuccess = await deleteReviewById(selectedReviewId);
+                        if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
+                        hideModal();
+                        await loadAndRender(false);
+                        jumpToApp('douyin');
+                    });
+                } else {
+                    showToast('⚠️ 未找到评论文本', 2000);
+                    hideModal();
                 }
             });
-        }
 
-        chooseDouyin.addEventListener('click', async () => {
-            if (!selectedReviewId) { hideModal(); return; }
-            const review = currentReviews.find(r => r.id === selectedReviewId);
-            if (review) {
-                copyTextToClipboard(review.text, async (success) => {
-                    const deleteSuccess = await deleteReviewById(selectedReviewId);
-                    if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
-                    hideModal();
-                    await loadAndRender(false);
-                    jumpToApp('douyin');
-                });
-            } else {
-                showToast('⚠️ 未找到评论文本', 2000);
-                hideModal();
-            }
-        });
-
-        chooseMeituan.addEventListener('click', async () => {
-            if (!selectedReviewId) { hideModal(); return; }
-            const review = currentReviews.find(r => r.id === selectedReviewId);
-            if (review) {
-                copyTextToClipboard(review.text, async (success) => {
-                    const deleteSuccess = await deleteReviewById(selectedReviewId);
-                    if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
-                    hideModal();
-                    await loadAndRender(false);
-                    jumpToApp('meituan');
-                });
-            } else {
-                showToast('⚠️ 未找到评论文本', 2000);
-                hideModal();
-            }
-        });
-
-        closeModalBtn.addEventListener('click', hideModal);
-        modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) hideModal(); });
-
-        // 启动
-        (async function bootstrap() {
-            await loadAndRender(true);
-            if (!isCloudReady) {
-                await initCloud();
-                if (isCloudReady) {
-                    const currentContent = reviewsContainer.innerHTML;
-                    if (currentContent.includes('错误') || currentContent.includes('暂无')) {
+            // 美团按钮点击
+            chooseMeituan.addEventListener('click', async () => {
+                if (!selectedReviewId) { hideModal(); return; }
+                const review = currentReviews.find(r => r.id === selectedReviewId);
+                if (review) {
+                    copyTextToClipboard(review.text, async (success) => {
+                        const deleteSuccess = await deleteReviewById(selectedReviewId);
+                        if (!deleteSuccess) showToast('⚠️ 云删除失败，但文本已复制', 3000);
+                        hideModal();
                         await loadAndRender(false);
-                    }
+                        jumpToApp('meituan');
+                    });
                 } else {
-                    if (loadingSkeleton) loadingSkeleton.style.display = 'none';
-                    reviewsContainer.innerHTML = `<div class="error-message">❌ 数据库初始化失败：${cloudInitError || '未知错误'}<br>请检查：<br>1. 环境ID是否正确<br>2. 匿名登录是否开启<br>3. 集合 ${COLLECTION_NAME} 是否存在</div>`;
+                    showToast('⚠️ 未找到评论文本', 2000);
+                    hideModal();
                 }
-            }
+            });
+
+            closeModalBtn.addEventListener('click', hideModal);
+            modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) hideModal(); });
+
+            // ================= 启动 =================
+            (async function bootstrap() {
+                await loadAndRender(true);
+                if (!isCloudReady) {
+                    await initCloud();
+                    if (isCloudReady) {
+                        const currentContent = reviewsContainer.innerHTML;
+                        if (currentContent.includes('错误') || currentContent.includes('暂无')) {
+                            await loadAndRender(false);
+                        }
+                    } else {
+                        if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+                        reviewsContainer.innerHTML = `<div class="error-message">❌ 数据库初始化失败：${cloudInitError || '未知错误'}<br>请检查：<br>1. 环境ID是否正确<br>2. 匿名登录是否开启<br>3. 集合 ${COLLECTION_NAME} 是否存在</div>`;
+                    }
+                }
+            })();
         })();
-    })();
-</script>
+    </script>
+</body>
+</html>
